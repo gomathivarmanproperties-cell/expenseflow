@@ -32,8 +32,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* TopBar - Height 64px */}
         <TopBar currentPage={currentPage} />
         
-        {/* Page Content - Below TopBar with padding */}
-        <main className="flex-1 p-6 overflow-auto">
+        {/* Page Content - Below TopBar with consistent 24px padding */}
+        <main className="flex-1 overflow-auto" style={{ padding: "24px" }}>
           {children}
         </main>
       </div>

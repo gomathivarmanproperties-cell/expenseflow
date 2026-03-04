@@ -34,18 +34,24 @@ export function TopBar({ currentPage }: { currentPage: string }) {
 
   return (
     <div 
-      className="flex items-center justify-between px-6"
+      className="flex items-center justify-between"
       style={{
         backgroundColor: "#ffffff",
         height: "64px",
-        borderBottom: "1px solid #e5e7eb"
+        borderBottom: "1px solid #e5e7eb",
+        padding: "0 24px"
       }}
     >
       {/* Current Page Name on Left */}
       <div>
         <h1 
-          className="text-xl font-semibold capitalize"
-          style={{ color: "#0f172a" }}
+          className="capitalize"
+          style={{ 
+            fontSize: "24px", 
+            fontWeight: "700", 
+            color: "#111827",
+            margin: 0
+          }}
         >
           {currentPage.replace("-", " ")}
         </h1>
