@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ExpenseFlow Firestore Security Rules
+    //
+    // Requires custom claims on the user:
+    // - request.auth.token.role in ['admin','finance','manager','employee']
+    // - request.auth.token.departmentId for manager/employee scoping
+    //
+    // Example (Admin SDK):
+    // admin.auth().setCustomUserClaims(uid, { role: 'manager', departmentId: 'dept_engineering' })
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdminOrFinance() {
+      return isSignedIn() && request.auth.token.role in ['admin', 'finance'];
+    }
+
+    function isManager() {
+      return isSignedIn() && request.auth.token.role == 'manager';
+    }
+
+    function isEmployee() {
+      return isSignedIn() && request.auth.token.role == 'employee';
+    }
+
+    function deptId() {
+      return request.auth.token.departmentId;
+    }
+
+    // Vendors: readable by any signed-in user, writable only by admin/finance
+    match /vendors/{vendorId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdminOrFinance();
+    }
+
+    // Invoices: readable by signed-in users, writable only by admin/finance
+    match /invoices/{invoiceId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdminOrFinance();
+    }
+
+    // Expenses:
+    // - admin/finance: full access
+    // - managers: only their department
+    // - employees: only their own
+    match /expenses/{expenseId} {
+      allow read: if isAdminOrFinance()
+        || (isManager() && resource.data.departmentId == deptId())
+        || (isEmployee() && resource.data.submittedBy == request.auth.uid);
+
+      allow create: if isAdminOrFinance()
+        || (isManager() && request.resource.data.departmentId == deptId())
+        || (isEmployee() && request.resource.data.submittedBy == request.auth.uid);
+
+      allow update, delete: if isAdminOrFinance()
+        || (isManager() && resource.data.departmentId == deptId())
+        || (isEmployee() && resource.data.submittedBy == request.auth.uid);
+    }
+
+    // Budget Proposals:
+    // - admin/finance: full access
+    // - managers: only their department
+    // - employees: only their own
+    match /budgetProposals/{proposalId} {
+      allow read: if isAdminOrFinance()
+        || (isManager() && resource.data.departmentId == deptId())
+        || (isEmployee() && resource.data.submittedBy == request.auth.uid);
+
+      allow create: if isAdminOrFinance()
+        || (isManager() && request.resource.data.departmentId == deptId())
+        || (isEmployee() && request.resource.data.submittedBy == request.auth.uid);
+
+      allow update, delete: if isAdminOrFinance()
+        || (isManager() && resource.data.departmentId == deptId())
+        || (isEmployee() && resource.data.submittedBy == request.auth.uid);
+    }
+
+    // Audit logs:
+    // - readable by signed-in users
+    // - create by any authenticated user
+    // - update/delete only by admin/finance
+    match /auditLogs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdminOrFinance();
+    }
+
+    // Admin/Finance: full access to everything else. Others: deny.
+    match /{document=**} {
+      allow read, write: if isAdminOrFinance();
+    }
+  }
+}

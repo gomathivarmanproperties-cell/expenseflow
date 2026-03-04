@@ -27,3 +27,129 @@ main {
   padding: 1.5rem;
 }
 
+/* Auth layout */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: radial-gradient(circle at top, #0f172a, #020617 55%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 1.75rem 1.75rem 2rem;
+  background-color: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(30, 64, 175, 0.6);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: radial-gradient(circle at 30% 0, #0ea5e9, #0f172a 55%);
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35);
+}
+
+.auth-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.auth-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.auth-label span {
+  color: #d1d5db;
+}
+
+.auth-input {
+  border-radius: 0.55rem;
+  border: 1px solid #1f2937;
+  background-color: #020617;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.auth-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+  background-color: #020617;
+}
+
+.auth-input::placeholder {
+  color: #6b7280;
+}
+
+.auth-error {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #fecaca;
+}
+
+.auth-button {
+  margin-top: 0.5rem;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0b1120;
+  background: linear-gradient(135deg, #38bdf8, #22c55e);
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 80ms ease, opacity 80ms ease;
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+}
+
+.auth-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.55);
+}
+
+.auth-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+

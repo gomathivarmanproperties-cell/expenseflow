@@ -6,20 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
-    "firebase": "latest",
+    "@hookform/resolvers": "latest",
+    "firebase": "^12.10.0",
     "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "latest",
-    "zod": "latest",
     "react-hook-form": "latest",
-    "@hookform/resolvers": "latest"
+    "recharts": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
+    "dotenv": "latest",
+    "firebase-admin": "latest",
+    "tsx": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
