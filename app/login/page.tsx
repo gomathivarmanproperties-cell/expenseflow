@@ -57,6 +57,19 @@ export default function LoginPage() {
       }
 
       setUser(profile);
+      
+      // Create session with uid and role
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          uid: profile.uid, 
+          role: profile.role 
+        }),
+      });
+      
       router.push("/dashboard");
     } catch (err: unknown) {
       let message = "Unable to sign in. Please try again.";
