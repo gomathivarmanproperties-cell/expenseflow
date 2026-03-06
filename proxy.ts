@@ -15,7 +15,7 @@ const roleAccess: Record<AppUserRole, string[]> = {
 // Public routes that don't require authentication
 const publicRoutes = ['/', '/login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Extract the path segments to determine the page
@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
 
   } catch (error) {
     // Invalid session cookie or other error
-    console.error('Middleware error:', error);
+    console.error('Proxy middleware error:', error);
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
