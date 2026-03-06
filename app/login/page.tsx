@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -9,7 +9,11 @@ import { useAuth, type AppUser, type AppUserRole } from "@/components/auth/AuthP
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const { setUser, user } = useAuth();
+
+  useEffect(() => {
+    if (user) router.push("/dashboard");
+  }, [user]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

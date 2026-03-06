@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { ProtectedRoute } from "../auth/ProtectedRoute";
 
 const publicRoutes = ["/", "/login"];
 
@@ -10,7 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
 
-  if (publicRoutes.includes(pathname) || loading || !user) {
+  if (publicRoutes.includes(pathname)) {
     return <>{children}</>;
   }
 
@@ -31,7 +32,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content - Offset for sidebar and topbar */}
       <main style={{ marginLeft: 240, paddingTop: 64, minHeight: "100vh", padding: "88px 24px 24px 264px" }}>
-        {children}
+        <ProtectedRoute>
+          {children}
+        </ProtectedRoute>
       </main>
 
     </div>
