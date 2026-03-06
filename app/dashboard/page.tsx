@@ -247,7 +247,14 @@ export default function DashboardPage() {
               border: "1px solid #e5e7eb",
               borderRadius: "12px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              padding: "20px"
+              padding: "20px",
+              transition: "box-shadow 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -280,7 +287,14 @@ export default function DashboardPage() {
               border: "1px solid #e5e7eb",
               borderRadius: "12px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              padding: "20px"
+              padding: "20px",
+              transition: "box-shadow 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -313,7 +327,14 @@ export default function DashboardPage() {
               border: "1px solid #e5e7eb",
               borderRadius: "12px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              padding: "20px"
+              padding: "20px",
+              transition: "box-shadow 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -347,7 +368,14 @@ export default function DashboardPage() {
                 border: "1px solid #e5e7eb",
                 borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                padding: "20px"
+                padding: "20px",
+                transition: "box-shadow 0.2s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

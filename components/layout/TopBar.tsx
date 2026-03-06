@@ -3,16 +3,16 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const roleBadgeColors = {
-  admin: "bg-purple-100 text-purple-800 border-purple-200",
-  finance: "bg-blue-100 text-blue-800 border-blue-200", 
-  manager: "bg-orange-100 text-orange-800 border-orange-200",
-  employee: "bg-gray-100 text-gray-800 border-gray-200",
+  admin: { backgroundColor: "#f3e8ff", color: "#7c3aed" },
+  finance: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
+  manager: { backgroundColor: "#fed7aa", color: "#ea580c" },
+  employee: { backgroundColor: "#f3f4f6", color: "#374151" },
 };
 
 const roleDisplayNames = {
   admin: "Admin",
   finance: "Finance",
-  manager: "Manager", 
+  manager: "Manager",
   employee: "Employee",
 };
 
@@ -32,47 +32,72 @@ export function TopBar({ currentPage }: { currentPage: string }) {
   const roleColor = roleBadgeColors[user.role as keyof typeof roleBadgeColors] || roleBadgeColors.employee;
   const roleDisplayName = roleDisplayNames[user.role as keyof typeof roleDisplayNames] || "Employee";
 
+  // Format page name for display
+  const formatPageName = (page: string) => {
+    return page
+      .split("-")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   return (
     <div 
-      className="flex items-center justify-between"
       style={{
-        backgroundColor: "#ffffff",
         height: "64px",
+        backgroundColor: "white",
         borderBottom: "1px solid #e5e7eb",
-        padding: "0 24px"
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingLeft: "24px",
+        paddingRight: "24px"
       }}
     >
-      {/* Current Page Name on Left */}
+      {/* LEFT - Current page name */}
       <div>
         <h1 
-          className="capitalize"
           style={{ 
-            fontSize: "24px", 
-            fontWeight: "700", 
+            fontSize: "20px", 
+            fontWeight: "600", 
             color: "#111827",
             margin: 0
           }}
         >
-          {currentPage.replace("-", " ")}
+          {formatPageName(currentPage)}
         </h1>
       </div>
 
-      {/* User Role Badge and Avatar on Right */}
-      <div className="flex items-center space-x-4">
-        {/* Role Badge */}
-        <div className={`
-          px-3 py-1 rounded-full text-xs font-semibold border
-          ${roleColor}
-        `}>
+      {/* RIGHT - Role badge + avatar */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {/* Role badge */}
+        <div 
+          style={{
+            backgroundColor: roleColor.backgroundColor,
+            color: roleColor.color,
+            padding: "4px 12px",
+            borderRadius: "9999px",
+            fontSize: "12px",
+            fontWeight: "600"
+          }}
+        >
           {roleDisplayName}
         </div>
 
-        {/* User Avatar with Initials */}
+        {/* Avatar circle with initials */}
         <div 
-          className="w-10 h-10 rounded-full flex items-center justify-center font-semibold"
-          style={{ backgroundColor: "#10b981", color: "white" }}
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#10b981",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
         >
-          {getInitials(user.fullName)}
+          <span style={{ color: "white", fontSize: "14px", fontWeight: "600" }}>
+            {getInitials(user.fullName)}
+          </span>
         </div>
       </div>
     </div>

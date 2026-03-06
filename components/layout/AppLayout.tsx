@@ -1,5 +1,4 @@
 "use client";
-
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Sidebar } from "./Sidebar";
@@ -11,32 +10,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
 
-  // Don't show layout for public routes or when loading
   if (publicRoutes.includes(pathname) || loading || !user) {
     return <>{children}</>;
   }
 
-  // Extract current page name from pathname
   const currentPage = pathname.split("/")[1] || "dashboard";
 
   return (
-    <div 
-      className="flex flex-row min-h-screen"
-      style={{ backgroundColor: "#f0fdf4" }}
-    >
-      {/* Sidebar - Fixed 240px width */}
-      <Sidebar />
+    <div style={{ minHeight: "100vh", backgroundColor: "#f0fdf4" }}>
       
-      {/* Right Side - Full width with column direction */}
-      <div className="flex flex-col flex-1 ml-[240px]">
-        {/* TopBar - Height 64px */}
-        <TopBar currentPage={currentPage} />
-        
-        {/* Page Content - Below TopBar with consistent 24px padding */}
-        <main className="flex-1 overflow-auto" style={{ padding: "24px" }}>
-          {children}
-        </main>
+      {/* Sidebar - Fixed on left */}
+      <div style={{ position: "fixed", top: 0, left: 0, width: 240, height: "100vh", zIndex: 20 }}>
+        <Sidebar />
       </div>
+
+      {/* TopBar - Fixed at top of content area */}
+      <div style={{ position: "fixed", top: 0, left: 240, right: 0, height: 64, zIndex: 10 }}>
+        <TopBar currentPage={currentPage} />
+      </div>
+
+      {/* Main Content - Offset for sidebar and topbar */}
+      <main style={{ marginLeft: 240, paddingTop: 64, minHeight: "100vh", padding: "88px 24px 24px 264px" }}>
+        {children}
+      </main>
+
     </div>
   );
 }

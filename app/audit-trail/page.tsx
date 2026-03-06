@@ -111,25 +111,18 @@ export default function AuditTrailPage() {
   };
 
   useEffect(() => {
-    console.log("=== AUDIT TRAIL PAGE INIT ===");
-    console.log("User:", user);
-    
     if (!user) {
-      console.log("No user, returning");
       return;
     }
 
     // Only show to Admin, Finance, and Manager roles
     if (!["admin", "finance", "manager"].includes(user.role)) {
-      console.log("User role not authorized:", user.role);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
-    
-    console.log("Setting up Firestore listener...");
     
     try {
       // Simple query first - no ordering to test basic connection
@@ -138,18 +131,8 @@ export default function AuditTrailPage() {
         limit(pageSize)
       );
 
-      console.log("Query created:", q);
-      console.log("Collection path: auditLogs");
-      console.log("Limit:", pageSize);
-
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        console.log("=== SNAPSHOT RECEIVED ===");
-        console.log("Snapshot size:", snapshot.size);
-        console.log("Snapshot docs length:", snapshot.docs.length);
-        console.log("Snapshot metadata:", snapshot.metadata);
-        
         if (snapshot.empty) {
-          console.log("SNAPSHOT IS EMPTY - No documents found");
           setLogs([]);
           setLoading(false);
           return;
@@ -158,27 +141,9 @@ export default function AuditTrailPage() {
         const logsData: AuditLog[] = [];
         snapshot.forEach((doc, index) => {
           const data = doc.data();
-          console.log(`=== DOCUMENT ${index + 1} ===`);
-          console.log("Doc ID:", doc.id);
-          console.log("Doc data:", data);
-          console.log("Doc data type:", typeof data);
-          console.log("Doc keys:", Object.keys(data));
-          console.log("Doc exists:", doc.exists());
-          
-          // Check each field individually
-          console.log("Field checks:");
-          console.log("- recordType:", data.recordType, typeof data.recordType);
-          console.log("- reference:", data.reference, typeof data.reference);
-          console.log("- action:", data.action, typeof data.action);
-          console.log("- performedBy:", data.performedBy, typeof data.performedBy);
-          console.log("- createdAt:", data.createdAt, typeof data.createdAt);
-          console.log("- amount:", data.amount, typeof data.amount);
-          console.log("- details:", data.details, typeof data.details);
           
           // Special handling for createdAt field
           let createdAtValue = data.createdAt || null;
-          console.log("Raw createdAt value:", createdAtValue);
-          console.log("Is Timestamp?", createdAtValue instanceof Timestamp);
           
           const logEntry: AuditLog = {
             id: doc.id,
@@ -192,13 +157,8 @@ export default function AuditTrailPage() {
             details: data.details,
           };
           
-          console.log("Processed log entry:", logEntry);
           logsData.push(logEntry);
         });
-        
-        console.log("=== FINAL LOGS DATA ===");
-        console.log("Total logs processed:", logsData.length);
-        console.log("Logs array:", logsData);
         
         setLogs(logsData);
         setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
@@ -206,25 +166,17 @@ export default function AuditTrailPage() {
         setLoading(false);
         
       }, (error) => {
-        console.error("=== FIRESTORE ERROR ===");
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
-        console.error("Error name:", error.name);
-        console.error("Error stack:", error.stack);
+        console.error("Firestore error:", error);
         setError("Failed to load audit logs: " + error.message);
         setLoading(false);
       });
-
-      console.log("Listener setup complete");
       
       return () => {
-        console.log("Cleaning up listener");
         unsubscribe();
       };
       
     } catch (error) {
-      console.error("=== QUERY SETUP ERROR ===");
-      console.error("Setup error:", error);
+      console.error("Query setup error:", error);
       setError("Failed to setup query: " + error);
       setLoading(false);
     }
@@ -262,7 +214,6 @@ export default function AuditTrailPage() {
         });
       });
 
-      console.log("New logs loaded:", newLogs.length);
       setLogs(prev => [...prev, ...newLogs]);
       setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
       setHasMore(snapshot.docs.length === pageSize);
@@ -330,13 +281,6 @@ export default function AuditTrailPage() {
     const matchesType = recordTypeFilter === "all" || log.recordType === recordTypeFilter;
     return matchesSearch && matchesType;
   });
-
-  console.log("=== RENDER STATE ===");
-  console.log("Loading:", loading);
-  console.log("Error:", error);
-  console.log("Logs count:", logs.length);
-  console.log("Filtered logs count:", filteredLogs.length);
-  console.log("User role:", user?.role);
 
   // Only show to Admin, Finance, and Manager roles
   if (!user || !["admin", "finance", "manager"].includes(user.role)) {

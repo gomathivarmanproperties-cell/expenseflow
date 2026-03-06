@@ -57,16 +57,13 @@ export default function BudgetsPage() {
     setLoading(true);
 
     // Fetch departments
-    console.log("Budgets page - fetching departments...");
     const unsubscribeDepartments = onSnapshot(
       collection(db, "departments"), 
       (snapshot) => {
-        console.log("Budgets page - departments snapshot:", snapshot.size, "docs");
         const departmentsData: Department[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
           const budgetAmount = data.budgetAmount || 0;
-          console.log("Budgets page - department doc:", doc.id, { name: data.name, budgetAmount });
           departmentsData.push({
             id: doc.id,
             name: data.name || "Unknown",
@@ -74,25 +71,17 @@ export default function BudgetsPage() {
             spent: 0, // Will be calculated from expenses
           });
         });
-        console.log("Budgets page - departmentsData:", departmentsData);
         setDepartments(departmentsData);
       }
     );
 
     // Fetch expenses
-    console.log("Budgets page - fetching expenses...");
     const unsubscribeExpenses = onSnapshot(
       query(collection(db, "expenses"), where("status", "==", "approved")),
       (snapshot) => {
-        console.log("Budgets page - expenses snapshot:", snapshot.size, "docs");
         const expensesData: Expense[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Budgets page - expense doc:", doc.id, { 
-            departmentId: data.departmentId, 
-            amount: data.amount, 
-            status: data.status 
-          });
           expensesData.push({
             id: doc.id,
             departmentId: data.departmentId || "",
@@ -100,17 +89,14 @@ export default function BudgetsPage() {
             status: data.status || "",
           });
         });
-        console.log("Budgets page - expensesData:", expensesData);
         setExpenses(expensesData);
       }
     );
 
     // Fetch budget proposals
-    console.log("Budgets page - fetching budget proposals...");
     const unsubscribeProposals = onSnapshot(
       query(collection(db, "budgetProposals"), orderBy("requestedAt", "desc")),
       (snapshot) => {
-        console.log("Budgets page - proposals snapshot:", snapshot.size, "docs");
         const proposalsData: BudgetProposal[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
@@ -129,14 +115,12 @@ export default function BudgetsPage() {
             reviewComment: data.reviewComment,
           });
         });
-        console.log("Budgets page - proposalsData:", proposalsData);
         setProposals(proposalsData);
         setLoading(false);
       }
     );
 
     return () => {
-      console.log("Budgets page - cleaning up listeners");
       unsubscribeDepartments();
       unsubscribeExpenses();
       unsubscribeProposals();
@@ -145,7 +129,6 @@ export default function BudgetsPage() {
 
   // Calculate spent amount per department whenever departments or expenses change
   useEffect(() => {
-    console.log("Budgets page - calculating spent amounts...");
     const departmentsWithSpending = departments.map(dept => {
       // Sum expenses for this department by matching departmentId
       const departmentExpenses = expenses.filter(expense => 
@@ -153,19 +136,12 @@ export default function BudgetsPage() {
       );
       const spentAmount = departmentExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
-      console.log(`Budgets page - department ${dept.name} (${dept.id}):`, {
-        budgetAmount: dept.budgetAmount,
-        expensesCount: departmentExpenses.length,
-        spentAmount
-      });
-      
       return {
         ...dept,
         spent: spentAmount
       };
     });
     
-    console.log("Budgets page - departments with calculated spending:", departmentsWithSpending);
     setDepartments(departmentsWithSpending);
   }, [expenses]);
 
