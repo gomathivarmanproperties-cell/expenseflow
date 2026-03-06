@@ -42,15 +42,18 @@ const roleDisplayNames = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const userRole = user?.role || "employee";
   const allowedPages = roleAccess[userRole as keyof typeof roleAccess] || [];
 
-  const filteredNavItems = navigationItems.filter(item => {
-    const pageName = item.href.replace("/", "");
-    return allowedPages.includes(pageName);
-  });
+  // Show all nav items while loading, filter by role after auth loads
+  const filteredNavItems = loading 
+    ? navigationItems 
+    : navigationItems.filter(item => {
+        const pageName = item.href.replace("/", "");
+        return allowedPages.includes(pageName);
+      });
 
   const getInitials = (name: string) => {
     return name
@@ -129,19 +132,19 @@ export function Sidebar() {
                   padding: "10px 16px",
                   borderRadius: "8px",
                   backgroundColor: isActive ? "#10b981" : "transparent",
-                  color: "white",
+                  color: loading ? "#6ee7b7" : "white",
                   textDecoration: "none",
                   fontSize: "14px",
                   fontWeight: "500",
                   transition: "background-color 0.2s ease"
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) {
+                  if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "#065f46";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) {
+                  if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }
                 }}

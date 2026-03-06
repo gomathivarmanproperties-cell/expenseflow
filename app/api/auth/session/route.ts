@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest) {
 export async function verifySessionToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET_KEY);
-    return payload as JWTPayload;
+    return payload as unknown as JWTPayload;
   } catch (error) {
     console.error('Error verifying token:', error);
     return null;
