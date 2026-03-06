@@ -139,7 +139,7 @@ export default function AuditTrailPage() {
         }
 
         const logsData: AuditLog[] = [];
-        snapshot.forEach((doc, index) => {
+        snapshot.forEach((doc) => {
           const data = doc.data();
           
           // Special handling for createdAt field
