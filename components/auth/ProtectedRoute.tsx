@@ -13,6 +13,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
+  // Always show loading spinner while checking auth
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#f0fdf4" }}>
@@ -21,7 +22,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  // Never show children if user is not authenticated
+  if (!user) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#f0fdf4" }}>
+        <div style={{ color: "#10b981", fontSize: 18, fontWeight: 600 }}>Loading...</div>
+      </div>
+    );
+  }
 
+  // Only show children when user is authenticated
   return <>{children}</>;
 }
