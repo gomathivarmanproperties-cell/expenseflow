@@ -36,8 +36,6 @@ export function TopBar({ currentPage }: { currentPage: string }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  if (!user) return null;
-
   // Fetch notifications
   useEffect(() => {
     // This would be implemented with actual Firestore queries
@@ -64,6 +62,8 @@ export function TopBar({ currentPage }: { currentPage: string }) {
     setNotifications(dummyNotifications);
     setUnreadCount(dummyNotifications.filter(n => !n.read).length);
   }, [user]);
+
+  if (!user) return null;
 
   const handleLogout = async () => {
     await signOut(auth);
