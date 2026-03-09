@@ -20,6 +20,15 @@ export type AppUser = {
   fullName: string;
   role: AppUserRole;
   department: string;
+  designation?: string;
+  phone?: string;
+  photoURL?: string;
+  assignedApproverId?: string;
+  assignedApproverName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  accountHolderName?: string;
 } | null;
 
 type AuthContextValue = {
@@ -49,6 +58,15 @@ async function fetchUserProfile(firebaseUser: FirebaseUser): Promise<AppUser> {
     email?: string;
     role?: AppUserRole;
     department?: string;
+    designation?: string;
+    phone?: string;
+    photoURL?: string;
+    assignedApproverId?: string;
+    assignedApproverName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    accountHolderName?: string;
   };
 
   return {
@@ -56,7 +74,16 @@ async function fetchUserProfile(firebaseUser: FirebaseUser): Promise<AppUser> {
     email: data.email ?? firebaseUser.email ?? "",
     fullName: data.fullName ?? firebaseUser.displayName ?? "",
     role: data.role ?? "employee",
-    department: data.department ?? ""
+    department: data.department ?? "",
+    designation: data.designation,
+    phone: data.phone,
+    photoURL: data.photoURL,
+    assignedApproverId: data.assignedApproverId,
+    assignedApproverName: data.assignedApproverName,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    ifscCode: data.ifscCode,
+    accountHolderName: data.accountHolderName,
   };
 }
 

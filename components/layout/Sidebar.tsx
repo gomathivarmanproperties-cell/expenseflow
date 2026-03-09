@@ -8,7 +8,9 @@ import {
   Receipt, 
   Users, 
   DollarSign, 
-  FileText
+  FileText,
+  User,
+  Settings
 } from "lucide-react";
 
 const navigationItems = [
@@ -19,9 +21,14 @@ const navigationItems = [
   { name: "Audit Trail", href: "/audit-trail", icon: FileText },
 ];
 
+const bottomNavItems = [
+  { name: "My Profile", href: "/profile", icon: User },
+  { name: "Settings", href: "/settings", icon: Settings, adminOnly: true },
+];
+
 const roleAccess = {
   employee: ["dashboard", "expenses"],
-  manager: ["dashboard", "expenses", "budgets", "audit-trail"],
+  manager: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
   finance: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
   admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
 };
@@ -157,6 +164,57 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* BOTTOM NAVIGATION - Profile & Settings */}
+      <div 
+        style={{
+          borderTop: "1px solid #065f46",
+          padding: "16px"
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {bottomNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            const shouldShow = item.adminOnly ? userRole === "admin" : true;
+            
+            if (!shouldShow) return null;
+            
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  backgroundColor: isActive ? "#10b981" : "transparent",
+                  color: "white",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  transition: "background-color 0.2s ease"
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = "#065f46";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }
+                }}
+              >
+                <Icon size={18} style={{ flexShrink: 0 }} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* BOTTOM SECTION - User Info */}
       <div 
         style={{
@@ -164,7 +222,16 @@ export function Sidebar() {
           padding: "16px"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <Link
+          href="/profile"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            textDecoration: "none",
+            color: "white"
+          }}
+        >
           {/* User avatar circle */}
           <div 
             style={{
@@ -175,15 +242,24 @@ export function Sidebar() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0
+              flexShrink: 0,
+              overflow: "hidden"
             }}
           >
-            <span style={{ color: "white", fontSize: "14px", fontWeight: "600" }}>
-              {getInitials(user?.fullName || "User")}
-            </span>
+            {user?.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt="Profile" 
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+              />
+            ) : (
+              <span style={{ color: "white", fontSize: "14px", fontWeight: "600" }}>
+                {getInitials(user?.fullName || "User")}
+              </span>
+            )}
           </div>
           
-          {/* User name and role */}
+          {/* User name, role, and designation */}
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             <div style={{ color: "white", fontSize: "14px", fontWeight: "500" }}>
               {user?.fullName || "User"}
@@ -191,8 +267,13 @@ export function Sidebar() {
             <div style={{ color: "#6ee7b7", fontSize: "12px" }}>
               {roleDisplayName}
             </div>
+            {user?.designation && (
+              <div style={{ color: "#94a3b8", fontSize: "11px" }}>
+                {user.designation}
+              </div>
+            )}
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
