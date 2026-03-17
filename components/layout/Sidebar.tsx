@@ -117,6 +117,8 @@ export function Sidebar() {
       .slice(0, 2);
   };
 
+  const userRole = user?.role ?? "employee";
+
   const roleColor = roleBadgeColors[userRole as keyof typeof roleBadgeColors] || roleBadgeColors.employee;
   const roleDisplayName = roleDisplayNames[userRole as keyof typeof roleDisplayNames] || "Employee";
 
