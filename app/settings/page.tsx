@@ -377,7 +377,7 @@ export default function SettingsPage() {
                 <SelectInput
                   label="Frequency"
                   value={reminderRules.expenseSubmission.frequency}
-                  onChange={frequency => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, frequency } }))}
+                  onChange={frequency => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, frequency: frequency as "monthly" | "twice-monthly" | "weekly" | "biweekly" } }))}
                   options={["Once a month", "Twice a month", "Weekly", "Every two weeks"]}
                 />
                 
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                   <NumberInput
                     label="Day of month"
                     value={reminderRules.expenseSubmission.dayOfMonth?.[0] || 1}
-                    onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [day] } }))}
+                    onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [day as number] } }))}
                     min={1}
                     max={31}
                   />
@@ -396,14 +396,14 @@ export default function SettingsPage() {
                     <NumberInput
                       label="First day of month"
                       value={reminderRules.expenseSubmission.dayOfMonth?.[0] || 1}
-                      onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [day, prev.expenseSubmission.dayOfMonth?.[1] || 15] } }))}
+                      onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [day as number, prev.expenseSubmission.dayOfMonth?.[1] || 15] } }))}
                       min={1}
                       max={31}
                     />
                     <NumberInput
                       label="Second day of month"
                       value={reminderRules.expenseSubmission.dayOfMonth?.[1] || 15}
-                      onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [prev.expenseSubmission.dayOfMonth?.[0] || 1, day] } }))}
+                      onChange={day => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfMonth: [prev.expenseSubmission.dayOfMonth?.[0] || 1 as number, day as number] } }))}
                       min={1}
                       max={31}
                     />
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                   <SelectInput
                     label="Day of week"
                     value={reminderRules.expenseSubmission.dayOfWeek || "Monday"}
-                    onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfWeek } }))}
+                    onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfWeek: dayOfWeek as string } }))}
                     options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
                   />
                 )}
@@ -436,7 +436,7 @@ export default function SettingsPage() {
                 <NumberInput
                   label="First reminder (days before due)"
                   value={reminderRules.vendorPayment.firstReminder}
-                  onChange={firstReminder => setReminderRules(prev => ({ ...prev, vendorPayment: { ...prev.vendorPayment, firstReminder } }))}
+                  onChange={firstReminder => setReminderRules(prev => ({ ...prev, vendorPayment: { ...prev.vendorPayment, firstReminder: firstReminder as number } }))}
                   min={1}
                   max={30}
                 />
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                       value={reminderRules.vendorPayment.secondReminder.days}
                       onChange={days => setReminderRules(prev => ({ ...prev, vendorPayment: { 
                         ...prev.vendorPayment, 
-                        secondReminder: { ...prev.vendorPayment.secondReminder, days } 
+                        secondReminder: { ...prev.vendorPayment.secondReminder, days: days as number } 
                       } }))}
                       min={1}
                       max={30}
@@ -484,14 +484,14 @@ export default function SettingsPage() {
                 <NumberInput
                   label="Trigger after X days pending"
                   value={reminderRules.approvalStuck.triggerDays}
-                  onChange={triggerDays => setReminderRules(prev => ({ ...prev, approvalStuck: { ...prev.approvalStuck, triggerDays } }))}
+                  onChange={triggerDays => setReminderRules(prev => ({ ...prev, approvalStuck: { ...prev.approvalStuck, triggerDays: triggerDays as number } }))}
                   min={1}
                   max={30}
                 />
                 <NumberInput
                   label="Repeat every Y days"
                   value={reminderRules.approvalStuck.repeatDays}
-                  onChange={repeatDays => setReminderRules(prev => ({ ...prev, approvalStuck: { ...prev.approvalStuck, repeatDays } }))}
+                  onChange={repeatDays => setReminderRules(prev => ({ ...prev, approvalStuck: { ...prev.approvalStuck, repeatDays: repeatDays as number } }))}
                   min={1}
                   max={30}
                 />
@@ -513,13 +513,13 @@ export default function SettingsPage() {
                 <SelectInput
                   label="Frequency"
                   value={reminderRules.summaryReport.frequency}
-                  onChange={frequency => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, frequency } }))}
+                  onChange={frequency => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, frequency: frequency as "weekly" | "biweekly" } }))}
                   options={["Weekly", "Every two weeks"]}
                 />
                 <SelectInput
                   label="Day of week"
                   value={reminderRules.summaryReport.dayOfWeek}
-                  onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, dayOfWeek } }))}
+                  onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, dayOfWeek: dayOfWeek as string } }))}
                   options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
                 />
               </div>
@@ -561,13 +561,11 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
                     <ToggleSwitch checked={access.employee} onChange={employee => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee } }))
+                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: employee as boolean } }))
                     } disabled={true} />
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
-                    <ToggleSwitch checked={access.manager} onChange={manager => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], manager } }))
-                    } />
+                    <ToggleSwitch checked={access.manager} onChange={manager => setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], manager: manager as boolean } }))} />
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
                     <ToggleSwitch checked={access.finance} onChange={finance => 
