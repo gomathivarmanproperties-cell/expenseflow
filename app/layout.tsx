@@ -15,7 +15,7 @@ const dmSans = DM_Sans({
 const instrumentSerif = Instrument_Serif({ 
   subsets: ["latin"],
   variable: "--font-instrument-serif",
-  weight: ["400", "500", "600", "700"]
+  weight: "400"
 });
 
 export const metadata: Metadata = {
