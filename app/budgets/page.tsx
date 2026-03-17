@@ -285,9 +285,10 @@ export default function BudgetsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -599,7 +600,11 @@ export default function BudgetsPage() {
                         <div>
                           <div style={{ fontWeight: "500" }}>{proposal.requestedBy}</div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {new Date(proposal.requestedAt).toLocaleDateString()}
+                            {new Date(proposal.requestedAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                           </div>
                         </div>
                       </td>

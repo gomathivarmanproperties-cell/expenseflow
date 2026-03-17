@@ -381,7 +381,7 @@ export default function SettingsPage() {
                   options={["Once a month", "Twice a month", "Weekly", "Every two weeks"]}
                 />
                 
-                {reminderRules.expenseSubmission.frequency === "monthly" && (
+                {reminderRules.expenseSubmission.frequency === "Once a month" && (
                   <NumberInput
                     label="Day of month"
                     value={reminderRules.expenseSubmission.dayOfMonth?.[0] || 1}
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                   />
                 )}
                 
-                {reminderRules.expenseSubmission.frequency === "twice-monthly" && (
+                {reminderRules.expenseSubmission.frequency === "Twice a month" && (
                   <>
                     <NumberInput
                       label="First day of month"
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                   </>
                 )}
                 
-                {(reminderRules.expenseSubmission.frequency === "weekly" || reminderRules.expenseSubmission.frequency === "biweekly") && (
+                {(reminderRules.expenseSubmission.frequency === "Weekly" || reminderRules.expenseSubmission.frequency === "Every two weeks") && (
                   <SelectInput
                     label="Day of week"
                     value={reminderRules.expenseSubmission.dayOfWeek || "Monday"}

@@ -15,6 +15,15 @@ import {
   Clock
 } from "lucide-react";
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: "approval" | "rejection" | "reminder" | "info";
+  read: boolean;
+  createdAt: Date;
+}
+
 const roleBadgeColors = {
   admin: { backgroundColor: "#f3e8ff", color: "#7c3aed" },
   finance: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
@@ -33,14 +42,14 @@ export function TopBar({ currentPage }: { currentPage: string }) {
   const { user } = useAuth();
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch notifications
   useEffect(() => {
     // This would be implemented with actual Firestore queries
     // For now, using dummy data
-    const dummyNotifications = [
+    const dummyNotifications: Notification[] = [
       {
         id: '1',
         title: 'Expense Approved',

@@ -597,6 +597,16 @@ export default function DashboardPage() {
                   ))}
                 </tbody>
               </table>
+              {recentExpenses.length === 0 && (
+                <div style={{
+                  textAlign: "center", padding: "40px 20px", color: "#6b7280",
+                  fontSize: "14px"
+                }}>
+                  <div style={{ marginBottom: "8px" }}>📋</div>
+                  <div>No recent expenses found</div>
+                  <div style={{ fontSize: "12px", marginTop: "4px" }}>Submitted expenses will appear here</div>
+                </div>
+              )}
             </div>
           )}
         </div>

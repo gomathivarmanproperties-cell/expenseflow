@@ -416,7 +416,11 @@ export default function VendorsPage() {
                         </p>
                         {vendor.lastPaymentDate && (
                           <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
-                            Last payment: {new Date(vendor.lastPaymentDate).toLocaleDateString()}
+                            Last payment: {new Date(vendor.lastPaymentDate).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </p>
                         )}
                       </div>
@@ -496,7 +500,11 @@ export default function VendorsPage() {
                         {formatCurrency(invoice.amount)}
                       </td>
                       <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
-                        {new Date(invoice.dueDate).toLocaleDateString()}
+                        {new Date(invoice.dueDate).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                       </td>
                       <td style={{ padding: "16px" }}>
                         {getStatusBadge(invoice.status)}

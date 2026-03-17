@@ -310,7 +310,11 @@ export default function ExpensesPage() {
                       {formatCurrency(expense.amount)}
                     </td>
                     <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
-                      {new Date(expense.date).toLocaleDateString()}
+                      {new Date(expense.date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </td>
                     <td style={{ padding: "16px" }}>
                       {getStatusBadge(expense.status)}
@@ -463,7 +467,11 @@ export default function ExpensesPage() {
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Date</label>
                     <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>
-                      {new Date(selectedExpense.date).toLocaleDateString()}
+                      {new Date(selectedExpense.date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </p>
                   </div>
                   

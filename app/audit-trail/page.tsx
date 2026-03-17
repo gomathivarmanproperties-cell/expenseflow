@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { collection, query, orderBy, limit, startAfter, onSnapshot, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, startAfter, onSnapshot, getDocs, Timestamp, DocumentSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Search, Filter, FileText, DollarSign, TrendingUp, Clock, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -25,7 +25,7 @@ export default function AuditTrailPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [recordTypeFilter, setRecordTypeFilter] = useState<string>("all");
-  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
@@ -93,7 +93,7 @@ export default function AuditTrailPage() {
       }
       
       return {
-        date: date.toLocaleDateString('en-US', {
+        date: date.toLocaleDateString('en-IN', {
           month: 'short',
           day: 'numeric',
           year: 'numeric'
