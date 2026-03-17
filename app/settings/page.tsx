@@ -18,7 +18,11 @@ import {
   CheckCircle,
   AlertCircle,
   Save,
-  Shield
+  Shield,
+  Receipt,
+  Users,
+  FileText,
+  Lock
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -576,170 +580,315 @@ export default function SettingsPage() {
 
       {/* SECTION 2 - MODULE ACCESS CONTROL */}
       <SectionCard title="Module Access Control" icon={<Settings size={16} />}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr style={{ backgroundColor: "#f9fafb" }}>
-                <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Module</th>
-                <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Employee</th>
-                <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Manager</th>
-                <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>Finance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(moduleAccess).map(([module, access]) => (
-                <tr key={module} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "12px", fontWeight: 500, color: "#111827" }}>
-                    {module.charAt(0).toUpperCase() + module.slice(1)}
-                  </td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <label style={{ 
-                      display: "inline-flex", 
-                      alignItems: "center", 
-                      cursor: "pointer",
-                      userSelect: "none"
-                    }}>
-                      <div style={{ position: "relative" }}>
-                        <input
-                          type="checkbox"
-                          checked={access.employee}
-                          onChange={() => setModuleAccess(prev => ({
-                            ...prev,
-                            expenses: { 
-                              ...prev.expenses, 
-                              employee: !prev.expenses.employee 
-                            }
-                          }))}
-                          style={{ opacity: 0, width: 0, height: 0 }}
-                        />
-                        <div style={{
-                          width: 44,
-                          height: 24,
-                          backgroundColor: access.employee ? "#10b981" : "#d1d5db",
-                          borderRadius: 12,
-                          transition: "background-color 0.2s",
-                          cursor: "pointer"
-                        }}>
-                          <div style={{
-                            position: "absolute",
-                            top: 2,
-                            left: access.employee ? 22 : 2,
-                            width: 20,
-                            height: 20,
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            transition: "left 0.2s",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                          }} />
-                        </div>
+        <div style={{
+          backgroundColor: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+        }}>
+          {/* Header Row */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "320px 1fr 1fr 1fr 1fr",
+            backgroundColor: "#f9fafb",
+            borderBottom: "1px solid #e5e7eb",
+            padding: "16px 20px"
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Module
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee</span>
+              <span style={{
+                backgroundColor: "#f3f4f6",
+                color: "#6b7280",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 500
+              }}>EMP</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Manager</span>
+              <span style={{
+                backgroundColor: "#fed7aa",
+                color: "#ea580c",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 500
+              }}>MGR</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Finance</span>
+              <span style={{
+                backgroundColor: "#dbeafe",
+                color: "#1d4ed8",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 500
+              }}>FIN</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Admin</span>
+              <span style={{
+                backgroundColor: "#f3e8ff",
+                color: "#7c3aed",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 500
+              }}>ADM</span>
+            </div>
+          </div>
+
+          {/* Module Rows */}
+          {[
+            {
+              key: 'expenses',
+              name: 'Expenses',
+              icon: <Receipt size={18} />,
+              description: 'Submit and track expense claims'
+            },
+            {
+              key: 'vendors',
+              name: 'Vendors',
+              icon: <Users size={18} />,
+              description: 'Manage vendor and payable submissions'
+            },
+            {
+              key: 'budgets',
+              name: 'Budgets',
+              icon: <DollarSign size={18} />,
+              description: 'View and request budget allocations'
+            },
+            {
+              key: 'auditTrail',
+              name: 'Audit Trail',
+              icon: <FileText size={18} />,
+              description: 'View activity logs and audit history'
+            }
+          ].map((module, index) => {
+            const access = moduleAccess[module.key as keyof ModuleAccess];
+            const allAccess = access.employee && access.manager && access.finance;
+            const someAccess = access.employee || access.manager || access.finance;
+            const noAccess = !access.employee && !access.manager && !access.finance;
+            
+            return (
+              <div key={module.key} style={{
+                display: "grid",
+                gridTemplateColumns: "320px 1fr 1fr 1fr 1fr",
+                backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb",
+                borderBottom: "1px solid #f3f4f6",
+                padding: "16px 20px",
+                transition: "background-color 0.2s"
+              }}>
+                {/* Module Info */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    backgroundColor: "#f3f4f6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#6b7280"
+                  }}>
+                    {module.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                        {module.name}
                       </div>
-                    </label>
-                  </td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <label style={{ 
-                      display: "inline-flex", 
-                      alignItems: "center", 
-                      cursor: "pointer",
-                      userSelect: "none"
+                      <div style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: allAccess ? "#10b981" : someAccess ? "#f59e0b" : "#ef4444"
+                      }} />
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                      {module.description}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Employee Toggle */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <label style={{ cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      style={{ display: "none" }}
+                      checked={access.employee}
+                      onChange={() => setModuleAccess(prev => ({
+                        ...prev,
+                        [module.key]: { ...prev[module.key as keyof ModuleAccess], employee: !prev[module.key as keyof ModuleAccess].employee }
+                      }))}
+                    />
+                    <div style={{
+                      width: 48,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: access.employee ? "#10b981" : "#e5e7eb",
+                      position: "relative",
+                      transition: "background-color 0.25s ease",
+                      boxShadow: access.employee ? "0 0 0 3px #d1fae5" : "none"
                     }}>
-                      <div style={{ position: "relative" }}>
-                        <input
-                          type="checkbox"
-                          checked={access.manager}
-                          onChange={() => setModuleAccess(prev => ({
-                            ...prev,
-                            expenses: { 
-                              ...prev.expenses, 
-                              manager: !prev.expenses.manager,
-                              employee: prev.expenses.employee,
-                              finance: prev.expenses.finance
-                            }
-                          }))}
-                          style={{ opacity: 0, width: 0, height: 0 }}
-                        />
-                        <div style={{
-                          width: 44,
-                          height: 24,
-                          backgroundColor: access.manager ? "#10b981" : "#d1d5db",
-                          borderRadius: 12,
-                          transition: "background-color 0.2s",
-                          cursor: "pointer"
-                        }}>
-                          <div style={{
-                            position: "absolute",
-                            top: 2,
-                            left: access.manager ? 22 : 2,
-                            width: 20,
-                            height: 20,
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            transition: "left 0.2s",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                          }} />
-                        </div>
-                      </div>
-                    </label>
-                  </td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <label style={{ 
-                      display: "inline-flex", 
-                      alignItems: "center", 
-                      cursor: "pointer",
-                      userSelect: "none"
+                      <div style={{
+                        position: "absolute",
+                        top: 3,
+                        left: access.employee ? 25 : 3,
+                        width: 20,
+                        height: 20,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        transition: "left 0.25s ease",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)"
+                      }} />
+                    </div>
+                  </label>
+                </div>
+
+                {/* Manager Toggle */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <label style={{ cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      style={{ display: "none" }}
+                      checked={access.manager}
+                      onChange={() => setModuleAccess(prev => ({
+                        ...prev,
+                        [module.key]: { ...prev[module.key as keyof ModuleAccess], manager: !prev[module.key as keyof ModuleAccess].manager }
+                      }))}
+                    />
+                    <div style={{
+                      width: 48,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: access.manager ? "#10b981" : "#e5e7eb",
+                      position: "relative",
+                      transition: "background-color 0.25s ease",
+                      boxShadow: access.manager ? "0 0 0 3px #d1fae5" : "none"
                     }}>
-                      <div style={{ position: "relative" }}>
-                        <input
-                          type="checkbox"
-                          checked={access.finance}
-                          onChange={() => setModuleAccess(prev => ({
-                            ...prev,
-                            expenses: { 
-                              ...prev.expenses, 
-                              manager: prev.expenses.manager,
-                              employee: prev.expenses.employee,
-                              finance: !prev.expenses.finance
-                            }
-                          }))}
-                          style={{ opacity: 0, width: 0, height: 0 }}
-                        />
-                        <div style={{
-                          width: 44,
-                          height: 24,
-                          backgroundColor: access.finance ? "#10b981" : "#d1d5db",
-                          borderRadius: 12,
-                          transition: "background-color 0.2s",
-                          cursor: "pointer"
-                        }}>
-                          <div style={{
-                            position: "absolute",
-                            top: 2,
-                            left: access.finance ? 22 : 2,
-                            width: 20,
-                            height: 20,
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            transition: "left 0.2s",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                          }} />
-                        </div>
-                      </div>
-                    </label>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <div style={{
+                        position: "absolute",
+                        top: 3,
+                        left: access.manager ? 25 : 3,
+                        width: 20,
+                        height: 20,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        transition: "left 0.25s ease",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)"
+                      }} />
+                    </div>
+                  </label>
+                </div>
+
+                {/* Finance Toggle */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <label style={{ cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      style={{ display: "none" }}
+                      checked={access.finance}
+                      onChange={() => setModuleAccess(prev => ({
+                        ...prev,
+                        [module.key]: { ...prev[module.key as keyof ModuleAccess], finance: !prev[module.key as keyof ModuleAccess].finance }
+                      }))}
+                    />
+                    <div style={{
+                      width: 48,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: access.finance ? "#10b981" : "#e5e7eb",
+                      position: "relative",
+                      transition: "background-color 0.25s ease",
+                      boxShadow: access.finance ? "0 0 0 3px #d1fae5" : "none"
+                    }}>
+                      <div style={{
+                        position: "absolute",
+                        top: 3,
+                        left: access.finance ? 25 : 3,
+                        width: 20,
+                        height: 20,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        transition: "left 0.25s ease",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)"
+                      }} />
+                    </div>
+                  </label>
+                </div>
+
+                {/* Admin Column (Always ON with lock) */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{
+                    position: "relative",
+                    opacity: 0.8,
+                    cursor: "not-allowed"
+                  }}>
+                    <div style={{
+                      width: 48,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: "#10b981",
+                      position: "relative",
+                      boxShadow: "0 0 0 3px #d1fae5"
+                    }}>
+                      <div style={{
+                        position: "absolute",
+                        top: 3,
+                        left: 25,
+                        width: 20,
+                        height: 20,
+                        backgroundColor: "white",
+                        borderRadius: "50%",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)"
+                      }} />
+                      <Lock size={10} style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 6,
+                        color: "#6b7280",
+                        opacity: 0.7
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        
+
+        {/* Save Button */}
         <div style={{ textAlign: "right", marginTop: 24 }}>
           <button
             onClick={saveModuleAccess}
             style={{
-              padding: "8px 16px", backgroundColor: "#10b981", color: "#fff", borderRadius: 8, border: "none",
-              fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
+              padding: "10px 20px",
+              backgroundColor: "#10b981",
+              color: "#fff",
+              borderRadius: 8,
+              border: "none",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+              justifyContent: "center",
+              transition: "background-color 0.2s"
             }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#059669"}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#10b981"}
           >
-            <Save size={14} />
+            <Save size={16} />
             Save Module Access
           </button>
         </div>
