@@ -32,6 +32,32 @@ interface RecentExpense {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 const formatINR = (amount: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 
@@ -323,17 +349,17 @@ export default function ProfilePage() {
         {/* ── Expense Stats ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
           {[
-            { label: "Total Submitted", value: stats.total, icon: <TrendingUp size={18} color="#fff" />, accent: "#6366f1" },
+            { label: "Total", value: stats.total, icon: <TrendingUp size={18} color="#fff" />, accent: "#6366f1" },
             { label: "Pending", value: stats.pending, icon: <Clock size={18} color="#fff" />, accent: "#f59e0b" },
             { label: "Approved", value: stats.approved, icon: <CheckCircle size={18} color="#fff" />, accent: "#10b981" },
             { label: "Rejected", value: stats.rejected, icon: <XCircle size={18} color="#fff" />, accent: "#ef4444" },
-            { label: "Total Reimbursed", value: formatINR(stats.totalAmount), icon: <CreditCard size={18} color="#fff" />, accent: "#0ea5e9" },
+            { label: "Total Reimbursed", value: safeAmount(stats.totalAmount), icon: <CreditCard size={18} color="#fff" />, accent: "#0ea5e9" },
           ].map((s) => (
             <div key={s.label} style={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: s.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.icon}</div>
               <div>
-                <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 2px 0", fontWeight: 600 }}>{s.label}</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>{s.value}</p>
+                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 600, color: "#111827" }}>{s.value}</div>
               </div>
             </div>
           ))}
@@ -398,10 +424,10 @@ export default function ProfilePage() {
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f0fdf4")}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fff" : "#fafafa")}
                   >
-                    <td style={{ padding: "12px", fontSize: 14, color: "#374151" }}>{exp.category}</td>
-                    <td style={{ padding: "12px", fontSize: 14, fontWeight: 600, color: "#111827" }}>{formatINR(exp.amount)}</td>
+                    <td style={{ padding: "12px", fontSize: 14, color: "#374151" }}>{safeStr(exp.category)}</td>
+                    <td style={{ padding: "12px", fontSize: 14, fontWeight: 600, color: "#111827" }}>{safeAmount(exp.amount)}</td>
                     <td style={{ padding: "12px", fontSize: 14, color: "#6b7280" }}>
-                      {exp.date ? new Date(exp.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                      {safeDate(exp.date)}
                     </td>
                     <td style={{ padding: "12px" }}>
                       <span style={{ ...statusStyle[exp.status], padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 600 }}>

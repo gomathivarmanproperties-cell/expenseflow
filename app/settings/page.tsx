@@ -27,6 +27,34 @@ import {
   Building
 } from "lucide-react";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ReminderRules {
@@ -857,7 +885,7 @@ export default function SettingsPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {module.name}
+                        {safeStr(module.name)}
                       </div>
                       <div style={{
                         width: 6,
@@ -1111,7 +1139,7 @@ export default function SettingsPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
           <TextInput
             label="Company Name"
-            value={companySettings.name}
+            value={safeStr(companySettings.name)}
             onChange={name => setCompanySettings(prev => ({ ...prev, name }))}
             placeholder="Enter company name"
           />

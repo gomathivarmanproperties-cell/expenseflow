@@ -57,6 +57,32 @@ interface SummaryData {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 const formatDate = (date: any) => {
   if (!date) return "—";
   try {
@@ -600,18 +626,18 @@ export default function DashboardPage() {
                     >
                       <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#111827", verticalAlign: "middle" }}>
                         <div style={{ display: "flex", flexDirection: "column" }}>
-                          <div>{exp.employeeName}</div>
-                          <div style={{ fontSize: 12, color: "#6b7280" }}>{exp.department}</div>
+                          <div>{safeStr(exp.employeeName)}</div>
+                          <div style={{ fontSize: 12, color: "#6b7280" }}>{safeStr(exp.department)}</div>
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {exp.category}
+                        {safeStr(exp.category)}
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#111827", verticalAlign: "top" }}>
-                        {formatINR(exp.amount)}
+                        {safeAmount(exp.amount)}
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151", verticalAlign: "top" }}>
-                        {formatDate(exp.date)}
+                        {safeDate(exp.date)}
                       </td>
                       <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                         <StatusBadge status={exp.status} />

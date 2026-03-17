@@ -103,7 +103,35 @@ export default function ExpensesPage() {
     );
   };
 
-  const formatCurrency = (amount: number) => {
+  // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
+const formatCurrency = (amount: number) => {
     return formatINR(amount);
   };
 
@@ -301,25 +329,21 @@ export default function ExpensesPage() {
                     <td style={{ padding: "16px", verticalAlign: "middle" }}>
                       <div style={{ display: "flex", flexDirection: "column" }}>
                         <div style={{ fontSize: "14px", fontWeight: "500", color: "#111827", marginBottom: "2px" }}>
-                          {expense.employeeName}
+                          {safeStr(expense.employeeName)}
                         </div>
                         <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {String(expense.department)}
+                          {safeStr(expense.department)}
                         </div>
                       </div>
                     </td>
                     <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {expense.category}
+                      {safeStr(expense.category)}
                     </td>
                     <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top" }}>
-                      {formatCurrency(expense.amount)}
+                      {safeAmount(expense.amount)}
                     </td>
                     <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top" }}>
-                      {new Date(expense.date).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {safeDate(expense.date)}
                     </td>
                     <td style={{ padding: "16px", verticalAlign: "top" }}>
                       {getStatusBadge(expense.status)}
@@ -449,34 +473,30 @@ export default function ExpensesPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Employee</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.employeeName)}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.employeeName)}</p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Department</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.department)}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.department)}</p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Category</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.category)}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.category)}</p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Amount</label>
                     <p style={{ fontSize: "18px", fontWeight: "600", color: "#111827", margin: 0 }}>
-                      {formatCurrency(selectedExpense.amount)}
+                      {safeAmount(selectedExpense.amount)}
                     </p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Date</label>
                     <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>
-                      {new Date(selectedExpense.date).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {safeDate(selectedExpense.date)}
                     </p>
                   </div>
                   
@@ -490,7 +510,7 @@ export default function ExpensesPage() {
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Description</label>
                     <p style={{ fontSize: "14px", color: "#111827", margin: 0, lineHeight: "1.5" }}>
-                      {String(selectedExpense.description)}
+                      {safeStr(selectedExpense.description)}
                     </p>
                   </div>
                 </div>

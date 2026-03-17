@@ -6,6 +6,34 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, where }
 import { db } from "@/lib/firebase";
 import { Edit, Plus, TrendingUp, TrendingDown, DollarSign, CheckCircle, XCircle, Clock } from "lucide-react";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 interface Department {
   id: string;
   name: string;
@@ -407,10 +435,10 @@ export default function BudgetsPage() {
                                 fontWeight: "600"
                               }}
                             >
-                              {dept.name.charAt(0)}
+                              {safeStr(dept.name.charAt(0))}
                             </div>
                             <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#111827", margin: 0 }}>
-                              {dept.name}
+                              {safeStr(dept.name)}
                             </h3>
                           </div>
                           
@@ -839,7 +867,7 @@ export default function BudgetsPage() {
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
                         <option key={dept.id} value={dept.id}>
-                          {dept.name} (Current: {formatCurrency(dept.budgetAmount)})
+                          {safeStr(dept.name)} (Current: {formatCurrency(dept.budgetAmount)})
                         </option>
                       ))}
                     </select>

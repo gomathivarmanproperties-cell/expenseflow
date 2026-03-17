@@ -6,6 +6,34 @@ import { collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, where }
 import { db } from "@/lib/firebase";
 import { Search, Filter, Plus, Upload, Mail, Building, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 // INR currency formatter
 const formatINR = (amount: number) =>
   new Intl.NumberFormat("en-IN", { 
@@ -391,12 +419,12 @@ export default function VendorsPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                       <div style={{ flex: 1 }}>
                         <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#111827", margin: "0 0 4px 0" }}>
-                          {vendor.name}
+                          {safeStr(vendor.name)}
                         </h3>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                           {getStatusBadge(vendor.status)}
                           <span style={{ fontSize: "13px", color: "#6b7280", padding: "4px 8px", backgroundColor: "#f3f4f6", borderRadius: "4px" }}>
-                            {String(vendor.paymentTerms)}
+                            {safeStr(vendor.paymentTerms)}
                           </span>
                         </div>
                       </div>
@@ -405,27 +433,23 @@ export default function VendorsPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: "500" }}>Category:</span>
-                        <span style={{ fontSize: "14px", color: "#374151" }}>{String(vendor.category)}</span>
+                        <span style={{ fontSize: "14px", color: "#374151" }}>{safeStr(vendor.category)}</span>
                       </div>
                       
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Mail size={14} style={{ color: "#6b7280" }} />
-                        <span style={{ fontSize: "14px", color: "#374151" }}>{String(vendor.email)}</span>
+                        <span style={{ fontSize: "14px", color: "#374151" }}>{safeStr(vendor.email)}</span>
                       </div>
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "12px", borderTop: "1px solid #f3f4f6" }}>
                       <div>
                         <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 2px 0" }}>
-                          {String(vendor.totalInvoices)} invoices • {formatCurrency(vendor.totalAmount)}
+                          {safeStr(vendor.totalInvoices)} invoices • {safeAmount(vendor.totalAmount)}
                         </p>
                         {vendor.lastPaymentDate && (
                           <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
-                            Last payment: {new Date(vendor.lastPaymentDate).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
+                            Last payment: {safeDate(vendor.lastPaymentDate)}
                           </p>
                         )}
                       </div>
@@ -496,20 +520,16 @@ export default function VendorsPage() {
                       }}
                     >
                       <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {invoice.vendorName}
+                        {safeStr(invoice.vendorName)}
                       </td>
                       <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {invoice.invoiceNumber}
+                        {safeStr(invoice.invoiceNumber)}
                       </td>
                       <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top" }}>
-                        {formatCurrency(invoice.amount)}
+                        {safeAmount(invoice.amount)}
                       </td>
                       <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top" }}>
-                        {new Date(invoice.dueDate).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                        {safeDate(invoice.dueDate)}
                       </td>
                       <td style={{ padding: "16px", verticalAlign: "top" }}>
                         {getStatusBadge(invoice.status)}

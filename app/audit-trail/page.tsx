@@ -6,6 +6,34 @@ import { collection, query, orderBy, limit, startAfter, onSnapshot, getDocs, Tim
 import { db } from "@/lib/firebase";
 import { Search, Filter, FileText, DollarSign, TrendingUp, Clock, ChevronDown, ChevronRight } from "lucide-react";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const safeDate = (val: any) => {
+  if (!val) return "—";
+  try {
+    const d = val?.toDate ? val.toDate() : new Date(val);
+    return d.toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
+const safeAmount = (val: any) => {
+  if (val === null || val === undefined) return "₹0";
+  const num = typeof val === "number" ? val : Number(val);
+  if (isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", { 
+    style: "currency", currency: "INR", maximumFractionDigits: 0 
+  }).format(num);
+};
+
+const safeStr = (val: any) => {
+  if (!val) return "—";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  return "—";
+};
+
 interface AuditLog {
   id: string;
   recordType: "expense" | "invoice" | "budget";
@@ -508,7 +536,7 @@ export default function AuditTrailPage() {
                             {log.details && (
                               <div style={{ marginBottom: "8px" }}>
                                 <span style={{ fontSize: "12px", color: "#6b7280", marginRight: "8px" }}>Details:</span>
-                                <span style={{ fontSize: "13px", color: "#374151" }}>{log.details}</span>
+                                <span style={{ fontSize: "13px", color: "#374151" }}>{safeStr(log.details)}</span>
                               </div>
                             )}
                             
@@ -516,11 +544,11 @@ export default function AuditTrailPage() {
                               <div style={{ marginBottom: "8px" }}>
                                 <span style={{ fontSize: "12px", color: "#6b7280", marginRight: "8px" }}>Amount:</span>
                                 <span style={{ fontSize: "13px", fontWeight: "500", color: "#111827" }}>
-                                  {formatCurrency(log.amount)}
+                                  {safeAmount(log.amount)}
                                 </span>
                                 {log.previousAmount !== undefined && (
                                   <span style={{ fontSize: "12px", color: "#6b7280", marginLeft: "8px" }}>
-                                    (Previous: {formatCurrency(log.previousAmount)})
+                                    (Previous: {safeAmount(log.previousAmount)})
                                   </span>
                                 )}
                               </div>
@@ -529,7 +557,7 @@ export default function AuditTrailPage() {
                             <div>
                               <span style={{ fontSize: "12px", color: "#6b7280", marginRight: "8px" }}>Timestamp:</span>
                               <span style={{ fontSize: "13px", color: "#374151" }}>
-                                {formatDate(log.createdAt)}
+                                {safeDate(log.createdAt)}
                               </span>
                             </div>
                           </div>
