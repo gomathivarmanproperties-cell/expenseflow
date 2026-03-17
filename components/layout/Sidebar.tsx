@@ -318,7 +318,7 @@ export function Sidebar() {
             border: "2px solid #f59e0b",
             boxShadow: "0 0 0 4px rgba(245, 158, 11, 0.2)"
           }}>
-            {getInitials(user?.displayName || user?.email || "User")}
+            {getInitials(user?.fullName || user?.email || "User")}
           </div>
           
           {/* User Info */}
