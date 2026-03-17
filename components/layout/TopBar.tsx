@@ -1,44 +1,9 @@
-Fix 2 build errors in ExpenseFlow:
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ERROR 1 — app/layout.tsx
-Font weight error: Instrument Serif only supports weight 400.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Find the Instrument_Serif font declaration in app/layout.tsx.
-Remove any weight options other than 400.
-
-Change from:
-const instrumentSerif = Instrument_Serif({
-  weight: ["400", "500"],  // or any other weights
-  ...
-})
-
-To:
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-serif",
-})
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ERROR 2 — components/layout/TopBar.tsx
-JSX parsing error around lines 305-326.
-The file got corrupted during editing.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-The TopBar.tsx file has broken JSX structure. 
-Please COMPLETELY REWRITE components/layout/TopBar.tsx 
-from scratch with this exact implementation:
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { collection, query, where, orderBy, limit, 
-         onSnapshot, updateDoc, doc, writeBatch,
-         Timestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Bell, LogOut } from "lucide-react";
@@ -47,26 +12,24 @@ interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "approval" | "rejection" | "reminder" | "info";
+  type: "reminder" | "approval" | "rejection" | "info";
   read: boolean;
-  createdAt: Timestamp | Date;
+  createdAt: string;
 }
 
-const roleBadgeStyles: Record<string, React.CSSProperties> = {
-  admin:    { backgroundColor: "#fef3c7", color: "#b45309" },
+const roleBadgeColors: Record<string, { backgroundColor: string; color: string }> = {
+  admin:    { backgroundColor: "#f3e8ff", color: "#7c3aed" },
   finance:  { backgroundColor: "#dbeafe", color: "#1d4ed8" },
   manager:  { backgroundColor: "#fed7aa", color: "#ea580c" },
-  employee: { backgroundColor: "#f1f5f9", color: "#475569" },
+  employee: { backgroundColor: "#f3f4f6", color: "#374151" },
 };
 
 const roleDisplayNames: Record<string, string> = {
-  admin: "Admin", finance: "Finance", 
-  manager: "Manager", employee: "Employee",
+  admin: "Admin", finance: "Finance", manager: "Manager", employee: "Employee",
 };
 
 const notifColors: Record<string, string> = {
-  reminder: "#f59e0b", approval: "#10b981", 
-  rejection: "#ef4444", info: "#6366f1",
+  reminder: "#f59e0b", approval: "#10b981", rejection: "#ef4444", info: "#6366f1",
 };
 
 export function TopBar({ currentPage }: { currentPage: string }) {
@@ -78,10 +41,7 @@ export function TopBar({ currentPage }: { currentPage: string }) {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (notifRef.current && 
-          !notifRef.current.contains(e.target as Node)) {
-        setShowNotifs(false);
-      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -89,30 +49,17 @@ export function TopBar({ currentPage }: { currentPage: string }) {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "notifications"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc"),
-      limit(20)
-    );
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(20));
     return onSnapshot(q, (snap) => {
-      setNotifications(
-        snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification))
-      );
+      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
     });
   }, [user]);
-
-  if (!user) return null;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAllRead = async () => {
     const batch = writeBatch(db);
-    notifications
-      .filter(n => !n.read)
-      .forEach(n => batch.update(
-        doc(db, "notifications", n.id), { read: true }
-      ));
+    notifications.filter(n => !n.read).forEach(n => batch.update(doc(db, "notifications", n.id), { read: true }));
     await batch.commit();
   };
 
@@ -121,218 +68,73 @@ export function TopBar({ currentPage }: { currentPage: string }) {
     router.push("/login");
   };
 
-  const initials = user.fullName
-    ?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?";
+  if (!user) return null;
+
+  const initials = user.fullName?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?";
+  const roleColor = roleBadgeColors[user.role] ?? roleBadgeColors.employee;
 
   const formatPageName = (page: string) =>
-    page.split("-")
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-
-  const formatDate = (createdAt: Timestamp | Date) => {
-    const date = createdAt instanceof Date
-      ? createdAt
-      : createdAt?.toDate?.() ?? new Date();
-    return date.toLocaleDateString("en-IN", {
-      day: "numeric", month: "short",
-      hour: "2-digit", minute: "2-digit"
-    });
-  };
-
-  const roleStyle = roleBadgeStyles[user.role] ?? roleBadgeStyles.employee;
+    page.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
   return (
-    <div style={{
-      height: 64,
-      backgroundColor: "white",
-      borderBottom: "1px solid #e2e8f0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingLeft: 24,
-      paddingRight: 24,
-    }}>
+    <div style={{ height: 64, backgroundColor: "white", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between", paddingLeft: 24, paddingRight: 24 }}>
 
-      {/* Page title */}
-      <h1 style={{
-        fontSize: 20,
-        fontWeight: 600,
-        color: "#0f172a",
-        margin: 0,
-        fontFamily: "var(--font-serif)",
-      }}>
+      <h1 style={{ fontSize: 20, fontWeight: 600, color: "#111827", margin: 0 }}>
         {formatPageName(currentPage)}
       </h1>
 
-      {/* Right section */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 
         {/* Role badge */}
-        <div style={{
-          ...roleStyle,
-          padding: "4px 12px",
-          borderRadius: 9999,
-          fontSize: 12,
-          fontWeight: 600,
-        }}>
+        <div style={{ ...roleColor, padding: "4px 12px", borderRadius: 9999, fontSize: 12, fontWeight: 600 }}>
           {roleDisplayNames[user.role] ?? "Employee"}
         </div>
 
         {/* Notification Bell */}
         <div ref={notifRef} style={{ position: "relative" }}>
           <button
-            onClick={() => {
-              setShowNotifs(!showNotifs);
-              if (!showNotifs && unreadCount > 0) handleMarkAllRead();
-            }}
-            style={{
-              position: "relative",
-              width: 38,
-              height: 38,
-              borderRadius: 10,
-              border: "1px solid #e2e8f0",
-              backgroundColor: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "#64748b",
-            }}
+            onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs && unreadCount > 0) handleMarkAllRead(); }}
+            style={{ position: "relative", width: 40, height: 40, borderRadius: 8, border: "1px solid #e5e7eb", backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#6b7280" }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}
           >
-            <Bell size={17} />
+            <Bell size={18} />
             {unreadCount > 0 && (
-              <span style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                backgroundColor: "#f59e0b",
-                border: "2px solid white",
-              }} />
+              <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", backgroundColor: "#ef4444", border: "2px solid #fff" }} />
             )}
           </button>
 
-          {/* Notifications dropdown */}
           {showNotifs && (
-            <div style={{
-              position: "absolute",
-              top: 46,
-              right: 0,
-              width: 340,
-              backgroundColor: "white",
-              border: "1px solid #e2e8f0",
-              borderRadius: 14,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
-              zIndex: 100,
-              overflow: "hidden",
-            }}>
-              <div style={{
-                padding: "14px 16px",
-                borderBottom: "1px solid #f1f5f9",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}>
-                <span style={{ 
-                  fontSize: 14, fontWeight: 600, color: "#0f172a" 
-                }}>
-                  Notifications
-                </span>
+            <div style={{ position: "absolute", top: 48, right: 0, width: 340, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 100, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>Notifications</span>
                 {unreadCount > 0 && (
-                  <button
-                    onClick={handleMarkAllRead}
-                    style={{
-                      fontSize: 12,
-                      color: "#10b981",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <button onClick={handleMarkAllRead} style={{ fontSize: 12, color: "#10b981", background: "none", border: "none", cursor: "pointer", fontWeight: 500 }}>
                     Mark all read
                   </button>
                 )}
               </div>
-
               <div style={{ maxHeight: 360, overflowY: "auto" }}>
                 {notifications.length === 0 ? (
-                  <div style={{
-                    padding: 40,
-                    textAlign: "center",
-                    color: "#94a3b8",
-                    fontSize: 13,
-                  }}>
-                    <div style={{ fontSize: 28, marginBottom: 8 }}>🔔</div>
-                    <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                      You&apos;re all caught up!
-                    </div>
-                    <div style={{ fontSize: 12 }}>
-                      No new notifications
-                    </div>
-                  </div>
+                  <div style={{ padding: 32, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>No notifications yet</div>
                 ) : (
                   notifications.map(n => (
                     <div
                       key={n.id}
-                      onClick={() => updateDoc(
-                        doc(db, "notifications", n.id), 
-                        { read: true }
-                      )}
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: "1px solid #f8fafc",
-                        backgroundColor: n.read ? "white" : "#f0fdf4",
-                        cursor: "pointer",
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                        transition: "background 0.15s",
-                      }}
+                      onClick={() => updateDoc(doc(db, "notifications", n.id), { read: true })}
+                      style={{ padding: "12px 16px", borderBottom: "1px solid #f9fafb", backgroundColor: n.read ? "#fff" : "#f0fdf4", cursor: "pointer", display: "flex", gap: 10, alignItems: "flex-start" }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = n.read ? "#fff" : "#f0fdf4")}
                     >
-                      <div style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        backgroundColor: notifColors[n.type] ?? "#94a3b8",
-                        marginTop: 5,
-                        flexShrink: 0,
-                      }} />
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: notifColors[n.type] ?? "#6b7280", marginTop: 5, flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <p style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          margin: "0 0 2px 0",
-                        }}>
-                          {n.title}
-                        </p>
-                        <p style={{
-                          fontSize: 12,
-                          color: "#64748b",
-                          margin: "0 0 4px 0",
-                          lineHeight: 1.5,
-                        }}>
-                          {n.message}
-                        </p>
-                        <p style={{ 
-                          fontSize: 11, color: "#94a3b8", margin: 0 
-                        }}>
-                          {formatDate(n.createdAt)}
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 2px 0" }}>{n.title}</p>
+                        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px 0", lineHeight: 1.5 }}>{n.message}</p>
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>
+                          {n.createdAt ? new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
                         </p>
                       </div>
-                      {!n.read && (
-                        <div style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          backgroundColor: "#10b981",
-                          flexShrink: 0,
-                          marginTop: 5,
-                        }} />
-                      )}
+                      {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#10b981", flexShrink: 0, marginTop: 5 }} />}
                     </div>
                   ))
                 )}
@@ -341,68 +143,27 @@ export function TopBar({ currentPage }: { currentPage: string }) {
           )}
         </div>
 
-        {/* Avatar */}
+        {/* Avatar → Profile */}
         <button
           onClick={() => router.push("/profile")}
           title="My Profile"
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: "50%",
-            backgroundColor: "#10b981",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "2px solid #f59e0b",
-            cursor: "pointer",
-            overflow: "hidden",
-            flexShrink: 0,
-          }}
+          style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #a7f3d0", cursor: "pointer", overflow: "hidden", flexShrink: 0 }}
         >
           {user.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt="Profile"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <img src={user.photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <span style={{ 
-              color: "white", fontSize: 13, fontWeight: 600 
-            }}>
-              {initials}
-            </span>
+            <span style={{ color: "white", fontSize: 14, fontWeight: 600 }}>{initials}</span>
           )}
         </button>
 
         {/* Logout */}
         <button
           onClick={handleLogout}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 14px",
-            borderRadius: 10,
-            border: "1px solid #e2e8f0",
-            backgroundColor: "white",
-            color: "#64748b",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = "#fef2f2";
-            e.currentTarget.style.color = "#dc2626";
-            e.currentTarget.style.borderColor = "#fecaca";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = "white";
-            e.currentTarget.style.color = "#64748b";
-            e.currentTarget.style.borderColor = "#e2e8f0";
-          }}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "1px solid #e5e7eb", backgroundColor: "white", color: "#6b7280", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = "white"; e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
         >
-          <LogOut size={14} />
+          <LogOut size={15} />
           Logout
         </button>
 
