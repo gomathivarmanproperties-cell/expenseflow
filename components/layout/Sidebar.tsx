@@ -72,11 +72,6 @@ export function Sidebar() {
 
   const [moduleAccess, setModuleAccess] = useState(defaultRoleAccess[user?.role || "employee"] || []);
 
-  // Admin always sees everything, skip Firestore module config
-  if (user?.role === "admin") {
-    setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"]);
-  }
-
   // Listen for real-time module access updates from Firestore
   useEffect(() => {
     if (!user) return;
@@ -415,67 +410,6 @@ export function Sidebar() {
             );
           })}
         </div>
-      </div>
-
-      {/* BOTTOM SECTION - User Info */}
-      <div 
-        style={{
-          borderTop: "1px solid #065f46",
-          padding: "16px"
-        }}
-      >
-        <Link
-          href="/profile"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            textDecoration: "none",
-            color: "white"
-          }}
-        >
-          {/* User avatar circle */}
-          <div 
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              backgroundColor: "#10b981",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              overflow: "hidden"
-            }}
-          >
-            {user?.photoURL ? (
-              <img 
-                src={user.photoURL} 
-                alt="Profile" 
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-              />
-            ) : (
-              <span style={{ color: "white", fontSize: "14px", fontWeight: "600" }}>
-                {getInitials(user?.fullName || "User")}
-              </span>
-            )}
-          </div>
-          
-          {/* User name, role, and designation */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <div style={{ color: "white", fontSize: "14px", fontWeight: "500" }}>
-              {user?.fullName || "User"}
-            </div>
-            <div style={{ color: "#6ee7b7", fontSize: "12px" }}>
-              {roleDisplayName}
-            </div>
-            {user?.designation && (
-              <div style={{ color: "#94a3b8", fontSize: "11px" }}>
-                {String(user.designation)}
-              </div>
-            )}
-          </div>
-        </Link>
       </div>
     </div>
   );
