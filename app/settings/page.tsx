@@ -112,6 +112,9 @@ interface CompanySettings {
   financialYearStart: string;
   currency: string;
   logoURL?: string;
+  appLogoURL?: string;
+  appName: string;
+  fontFamily: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -269,8 +272,13 @@ export default function SettingsPage() {
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
     name: "",
     financialYearStart: "April",
-    currency: "INR"
+    currency: "INR",
+    appName: "ExpenseFlow",
+    fontFamily: "Inter"
   });
+
+  const [uploadingCompanyLogo, setUploadingCompanyLogo] = useState(false);
+  const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
 
   const [categories, setCategories] = useState<string[]>(["Travel", "Food", "Accommodation", "Office Supplies", "Medical", "Entertainment", "Training", "Petrol", "Other"]);
 
@@ -365,19 +373,41 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCompanyLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadingCompanyLogo(true);
     try {
       const storageRef = ref(storage, `company/logo`);
       await uploadBytes(storageRef, file);
       const logoURL = await getDownloadURL(storageRef);
       
       setCompanySettings(prev => ({ ...prev, logoURL }));
-      showToast("Logo uploaded successfully!", "success");
+      showToast("Company logo uploaded successfully!", "success");
     } catch {
-      showToast("Failed to upload logo.", "error");
+      showToast("Failed to upload company logo.", "error");
+    } finally {
+      setUploadingCompanyLogo(false);
+    }
+  };
+
+  const handleAppLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAppLogo(true);
+    try {
+      const storageRef = ref(storage, `app/logo`);
+      await uploadBytes(storageRef, file);
+      const appLogoURL = await getDownloadURL(storageRef);
+      
+      setCompanySettings(prev => ({ ...prev, appLogoURL }));
+      showToast("App logo uploaded successfully!", "success");
+    } catch {
+      showToast("Failed to upload app logo.", "error");
+    } finally {
+      setUploadingAppLogo(false);
     }
   };
 
@@ -1136,37 +1166,193 @@ export default function SettingsPage() {
       )}
 
       {activeTab === "company" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
-          <TextInput
-            label="Company Name"
-            value={safeStr(companySettings.name)}
-            onChange={name => setCompanySettings(prev => ({ ...prev, name }))}
-            placeholder="Enter company name"
-          />
-          
-          <SelectInput
-            label="Financial Year Start Month"
-            value={companySettings.financialYearStart}
-            onChange={financialYearStart => setCompanySettings(prev => ({ ...prev, financialYearStart }))}
-            options={[
-              { value: "April", label: "April" },
-              { value: "January", label: "January" },
-              { value: "July", label: "July" },
-              { value: "October", label: "October" }
-            ]}
-          />
-          
-          <SelectInput
-            label="Currency"
-            value={companySettings.currency}
-            onChange={currency => setCompanySettings(prev => ({ ...prev, currency }))}
-            options={[
-              { value: "INR", label: "INR (₹)" },
-              { value: "USD", label: "USD ($)" },
-              { value: "EUR", label: "EUR (€)" },
-              { value: "GBP", label: "GBP (£)" }
-            ]}
-          />
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16, marginBottom: 24 }}>
+            <TextInput
+              label="Company Name"
+              value={safeStr(companySettings.name)}
+              onChange={name => setCompanySettings(prev => ({ ...prev, name }))}
+              placeholder="Enter company name"
+            />
+            
+            <TextInput
+              label="App Name"
+              value={safeStr(companySettings.appName)}
+              onChange={appName => setCompanySettings(prev => ({ ...prev, appName }))}
+              placeholder="ExpenseFlow"
+            />
+            
+            <SelectInput
+              label="Font Family"
+              value={companySettings.fontFamily}
+              onChange={fontFamily => setCompanySettings(prev => ({ ...prev, fontFamily }))}
+              options={[
+                { value: "DM Sans", label: "DM Sans" },
+                { value: "Inter", label: "Inter" },
+                { value: "Poppins", label: "Poppins" },
+                { value: "Plus Jakarta Sans", label: "Plus Jakarta Sans" },
+                { value: "Nunito", label: "Nunito" },
+                { value: "Lato", label: "Lato" }
+              ]}
+            />
+            
+            <SelectInput
+              label="Financial Year Start Month"
+              value={companySettings.financialYearStart}
+              onChange={financialYearStart => setCompanySettings(prev => ({ ...prev, financialYearStart }))}
+              options={[
+                { value: "April", label: "April" },
+                { value: "January", label: "January" },
+                { value: "July", label: "July" },
+                { value: "October", label: "October" }
+              ]}
+            />
+            
+            <SelectInput
+              label="Currency"
+              value={companySettings.currency}
+              onChange={currency => setCompanySettings(prev => ({ ...prev, currency }))}
+              options={[
+                { value: "INR", label: "INR (₹)" },
+                { value: "USD", label: "USD ($)" },
+                { value: "EUR", label: "EUR (€)" },
+                { value: "GBP", label: "GBP (£)" }
+              ]}
+            />
+          </div>
+
+          {/* Font Preview */}
+          <div style={{ marginBottom: 24, padding: 16, backgroundColor: "#f9fafb", borderRadius: 8 }}>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8, fontWeight: 600 }}>Font Preview</p>
+            <p style={{ fontFamily: companySettings.fontFamily, fontSize: 18, color: "#111827", margin: 0 }}>
+              The quick brown fox jumps over the lazy dog
+            </p>
+          </div>
+
+          {/* Logo Uploads */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24, marginBottom: 24 }}>
+            {/* Company Logo */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, display: "block" }}>
+                Company Logo
+              </label>
+              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                {companySettings.logoURL ? (
+                  <img 
+                    src={companySettings.logoURL} 
+                    alt="Company Logo" 
+                    style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, border: "1px solid #e5e7eb" }} 
+                  />
+                ) : (
+                  <div style={{ width: 60, height: 60, backgroundColor: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e5e7eb" }}>
+                    <Building size={24} color="#9ca3af" />
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCompanyLogoUpload}
+                    style={{ display: "none" }}
+                    id="company-logo-upload"
+                  />
+                  <label
+                    htmlFor="company-logo-upload"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 16px",
+                      backgroundColor: uploadingCompanyLogo ? "#d1d5db" : "#10b981",
+                      color: "white",
+                      borderRadius: 6,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      cursor: uploadingCompanyLogo ? "not-allowed" : "pointer",
+                      transition: "background-color 0.2s"
+                    }}
+                  >
+                    {uploadingCompanyLogo ? "Uploading..." : "Choose Logo"}
+                  </label>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0 0" }}>
+                    Recommended: Square image, 200x200px
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* App Logo */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, display: "block" }}>
+                App Logo (shown in sidebar)
+              </label>
+              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                {companySettings.appLogoURL ? (
+                  <img 
+                    src={companySettings.appLogoURL} 
+                    alt="App Logo" 
+                    style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, border: "1px solid #e5e7eb" }} 
+                  />
+                ) : (
+                  <div style={{ width: 60, height: 60, backgroundColor: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e5e7eb" }}>
+                    <Settings size={24} color="#9ca3af" />
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAppLogoUpload}
+                    style={{ display: "none" }}
+                    id="app-logo-upload"
+                  />
+                  <label
+                    htmlFor="app-logo-upload"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 16px",
+                      backgroundColor: uploadingAppLogo ? "#d1d5db" : "#10b981",
+                      color: "white",
+                      borderRadius: 6,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      cursor: uploadingAppLogo ? "not-allowed" : "pointer",
+                      transition: "background-color 0.2s"
+                    }}
+                  >
+                    {uploadingAppLogo ? "Uploading..." : "Choose Logo"}
+                  </label>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0 0" }}>
+                    Recommended: Square image, 200x200px
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={saveCompanySettings}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                transition: "background-color 0.2s"
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#059669"}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "#10b981"}
+            >
+              <Save size={16} />
+              Save Company Settings
+            </button>
+          </div>
         </div>
       )}
 

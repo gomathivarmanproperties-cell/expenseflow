@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Edit, Plus, TrendingUp, TrendingDown, DollarSign, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Edit, Plus, TrendingUp, TrendingDown, IndianRupee, CheckCircle, XCircle, Clock } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -399,7 +399,7 @@ export default function BudgetsPage() {
           <div style={{ padding: "20px" }}>
             {departments.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px" }}>
-                <DollarSign size={48} style={{ color: "#d1d5db", margin: "0 auto 16px" }} />
+                <IndianRupee size={48} style={{ color: "#d1d5db", margin: "0 auto 16px" }} />
                 <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
                   No departments found. Please add departments to get started.
                 </p>

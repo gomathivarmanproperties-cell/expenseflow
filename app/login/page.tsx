@@ -57,9 +57,19 @@ export default function LoginPage() {
           email?: string;
           role?: AppUserRole;
           department?: string;
+          status?: string;
         };
 
         console.log("Firestore user data:", data);
+
+        // Check if user is inactive
+        if (data.status === "inactive") {
+          console.log("User is inactive - blocking login");
+          await auth.signOut();
+          setError("Your account has been deactivated. Contact your administrator.");
+          setSubmitting(false);
+          return;
+        }
 
         profile = {
           uid: firebaseUser.uid,

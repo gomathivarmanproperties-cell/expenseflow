@@ -10,18 +10,21 @@ import {
   LayoutDashboard, 
   Receipt, 
   Users, 
-  DollarSign, 
+  IndianRupee, 
   FileText,
   User,
-  Settings
+  Settings,
+  FolderOpen
 } from "lucide-react";
 
 const navigationItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Vendors", href: "/vendors", icon: Users },
-  { name: "Budgets", href: "/budgets", icon: DollarSign },
+  { name: "Budgets", href: "/budgets", icon: IndianRupee },
+  { name: "Projects", href: "/projects", icon: FolderOpen, roles: ["admin", "manager", "finance"] },
   { name: "Audit Trail", href: "/audit-trail", icon: FileText },
+  { name: "Users", href: "/users", icon: Users, adminOnly: true },
 ];
 
 const bottomNavItems = [
@@ -53,6 +56,13 @@ const roleDisplayNames = {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
+
+  // Company branding state
+  const [companyBranding, setCompanyBranding] = useState({
+    appName: "ExpenseFlow",
+    appLogoURL: "",
+    fontFamily: "Inter"
+  });
 
   // Default role access as fallback
   const defaultRoleAccess = {
@@ -129,11 +139,35 @@ export function Sidebar() {
     return unsubscribe;
   }, [user]);
 
+  // Listen for company branding updates from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, "appConfig", "company"), (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        setCompanyBranding({
+          appName: data.appName || "ExpenseFlow",
+          appLogoURL: data.appLogoURL || "",
+          fontFamily: data.fontFamily || "Inter"
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   // Show all nav items while loading, filter by role after auth loads
   const filteredNavItems = loading 
     ? navigationItems 
     : navigationItems.filter(item => {
         const pageName = item.href.replace("/", "");
+        
+        // Check admin-only items
+        if (item.adminOnly && user?.role !== "admin") return false;
+        
+        // Check role-based items
+        if (item.roles && !item.roles.includes(user?.role || "")) return false;
+        
+        // Check module access
         return moduleAccess.includes(pageName);
       });
 
@@ -161,7 +195,8 @@ export function Sidebar() {
         backgroundColor: "#064e3b",
         display: "flex",
         flexDirection: "column",
-        zIndex: 40
+        zIndex: 40,
+        fontFamily: companyBranding.fontFamily
       }}
     >
       {/* TOP SECTION - Logo Area */}
@@ -177,32 +212,47 @@ export function Sidebar() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          {/* EF mark in gold on slightly lighter green */}
-          <div 
-            style={{
-              width: "40px",
-              height: "40px",
-              backgroundColor: "#065f46",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "10px",
-              border: "2px solid #f59e0b",
-              boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
-            }}
-          >
-            <span style={{ color: "#f59e0b", fontSize: "16px", fontWeight: "700", letterSpacing: "0.05em" }}>EF</span>
-          </div>
+          {/* App Logo or EF mark */}
+          {companyBranding.appLogoURL ? (
+            <img 
+              src={companyBranding.appLogoURL} 
+              alt="App Logo" 
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "10px",
+                border: "2px solid #f59e0b",
+                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
+                objectFit: "cover"
+              }}
+            />
+          ) : (
+            <div 
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: "#065f46",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "10px",
+                border: "2px solid #f59e0b",
+                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
+              }}
+            >
+              <span style={{ color: "#f59e0b", fontSize: "16px", fontWeight: "700", letterSpacing: "0.05em" }}>EF</span>
+            </div>
+          )}
           
-          {/* "ExpenseFlow" in Instrument Serif, white, elegant */}
+          {/* App Name */}
           <span style={{ 
             color: "white", 
             fontSize: "20px", 
             fontWeight: "600",
-            fontFamily: "'Instrument Serif', Georgia, serif",
+            fontFamily: companyBranding.fontFamily,
             letterSpacing: "-0.02em"
           }}>
-            ExpenseFlow
+            {companyBranding.appName}
           </span>
         </div>
       </div>
