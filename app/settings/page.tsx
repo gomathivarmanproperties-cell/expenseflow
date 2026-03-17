@@ -303,7 +303,7 @@ export default function SettingsPage() {
 
   const saveModuleAccess = async () => {
     try {
-      await setDoc(doc(db, "appConfig", "moduleAccess"), moduleAccess);
+      await setDoc(doc(db, "appConfig", "moduleAccess"), moduleAccess, { merge: true });
       showToast("Module access updated!", "success");
     } catch {
       showToast("Failed to save module access.", "error");
@@ -594,15 +594,15 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
                     <ToggleSwitch checked={access.employee} onChange={employee => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: employee as boolean } }))
+                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: employee as boolean, manager: prev[module as keyof ModuleAccess].manager, finance: prev[module as keyof ModuleAccess].finance } }))
                     } disabled={true} />
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
-                    <ToggleSwitch checked={access.manager} onChange={manager => setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], manager: manager as boolean } }))} />
+                    <ToggleSwitch checked={access.manager} onChange={manager => setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], manager: manager as boolean, finance: prev[module as keyof ModuleAccess].finance } }))} />
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
                     <ToggleSwitch checked={access.finance} onChange={finance => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], finance } }))
+                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: prev[module as keyof ModuleAccess].employee, manager: prev[module as keyof ModuleAccess].manager, finance } }))
                     } />
                   </td>
                 </tr>
