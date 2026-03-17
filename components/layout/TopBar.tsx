@@ -357,7 +357,10 @@ export function TopBar({ currentPage }: { currentPage: string }) {
                             {notif.message}
                           </div>
                           <div style={{ fontSize: "11px", color: "#9ca3af" }}>
-                            {new Date(notif.createdAt).toLocaleDateString("en-IN", {
+                            {(notif.createdAt instanceof Date 
+                            ? notif.createdAt 
+                            : notif.createdAt?.toDate?.() ?? new Date()
+                          ).toLocaleDateString("en-IN", {
                               hour: "2-digit",
                               minute: "2-digit",
                               day: "numeric",
