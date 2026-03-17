@@ -41,6 +41,7 @@ interface Expense {
   date: string;
   status: "pending" | "approved" | "rejected";
   description: string;
+  department?: string;
 }
 
 interface SummaryData {
