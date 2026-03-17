@@ -163,7 +163,7 @@ const NumberInput = ({ label, value, onChange, min = 1, max = 31 }: { label: str
   </div>
 );
 
-const SelectInput = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) => (
+const SelectInput = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: Array<{value: string; label: string}> }) => (
   <div style={{ marginBottom: 16 }}>
     <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, display: "block" }}>
       {label}
@@ -178,7 +178,7 @@ const SelectInput = ({ label, value, onChange, options }: { label: string; value
       onFocus={e => e.currentTarget.style.borderColor = "#10b981"}
       onBlur={e => e.currentTarget.style.borderColor = "#e5e7eb"}
     >
-      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </select>
   </div>
 );
@@ -378,10 +378,15 @@ export default function SettingsPage() {
                   label="Frequency"
                   value={reminderRules.expenseSubmission.frequency}
                   onChange={frequency => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, frequency: frequency as "monthly" | "twice-monthly" | "weekly" | "biweekly" } }))}
-                  options={["Once a month", "Twice a month", "Weekly", "Every two weeks"]}
+                  options={[
+                    { value: "monthly", label: "Once a month" },
+                    { value: "twice-monthly", label: "Twice a month" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "biweekly", label: "Every two weeks" }
+                  ]}
                 />
                 
-                {reminderRules.expenseSubmission.frequency === "Once a month" && (
+                {reminderRules.expenseSubmission.frequency === "monthly" && (
                   <NumberInput
                     label="Day of month"
                     value={reminderRules.expenseSubmission.dayOfMonth?.[0] || 1}
@@ -391,7 +396,7 @@ export default function SettingsPage() {
                   />
                 )}
                 
-                {reminderRules.expenseSubmission.frequency === "Twice a month" && (
+                {reminderRules.expenseSubmission.frequency === "twice-monthly" && (
                   <>
                     <NumberInput
                       label="First day of month"
@@ -410,12 +415,20 @@ export default function SettingsPage() {
                   </>
                 )}
                 
-                {(reminderRules.expenseSubmission.frequency === "Weekly" || reminderRules.expenseSubmission.frequency === "Every two weeks") && (
+                {(reminderRules.expenseSubmission.frequency === "weekly" || reminderRules.expenseSubmission.frequency === "biweekly") && (
                   <SelectInput
                     label="Day of week"
                     value={reminderRules.expenseSubmission.dayOfWeek || "Monday"}
                     onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, expenseSubmission: { ...prev.expenseSubmission, dayOfWeek: dayOfWeek as string } }))}
-                    options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+                    options={[
+                      { value: "Monday", label: "Monday" },
+                      { value: "Tuesday", label: "Tuesday" },
+                      { value: "Wednesday", label: "Wednesday" },
+                      { value: "Thursday", label: "Thursday" },
+                      { value: "Friday", label: "Friday" },
+                      { value: "Saturday", label: "Saturday" },
+                      { value: "Sunday", label: "Sunday" }
+                    ]}
                   />
                 )}
               </div>
@@ -514,13 +527,24 @@ export default function SettingsPage() {
                   label="Frequency"
                   value={reminderRules.summaryReport.frequency}
                   onChange={frequency => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, frequency: frequency as "weekly" | "biweekly" } }))}
-                  options={["Weekly", "Every two weeks"]}
+                  options={[
+                    { value: "weekly", label: "Weekly" },
+                    { value: "biweekly", label: "Every two weeks" }
+                  ]}
                 />
                 <SelectInput
                   label="Day of week"
                   value={reminderRules.summaryReport.dayOfWeek}
                   onChange={dayOfWeek => setReminderRules(prev => ({ ...prev, summaryReport: { ...prev.summaryReport, dayOfWeek: dayOfWeek as string } }))}
-                  options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+                  options={[
+                    { value: "Monday", label: "Monday" },
+                    { value: "Tuesday", label: "Tuesday" },
+                    { value: "Wednesday", label: "Wednesday" },
+                    { value: "Thursday", label: "Thursday" },
+                    { value: "Friday", label: "Friday" },
+                    { value: "Saturday", label: "Saturday" },
+                    { value: "Sunday", label: "Sunday" }
+                  ]}
                 />
               </div>
             )}
