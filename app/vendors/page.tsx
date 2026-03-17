@@ -396,7 +396,7 @@ export default function VendorsPage() {
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                           {getStatusBadge(vendor.status)}
                           <span style={{ fontSize: "13px", color: "#6b7280", padding: "4px 8px", backgroundColor: "#f3f4f6", borderRadius: "4px" }}>
-                            {vendor.paymentTerms}
+                            {String(vendor.paymentTerms)}
                           </span>
                         </div>
                       </div>
@@ -405,19 +405,19 @@ export default function VendorsPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: "500" }}>Category:</span>
-                        <span style={{ fontSize: "14px", color: "#374151" }}>{vendor.category}</span>
+                        <span style={{ fontSize: "14px", color: "#374151" }}>{String(vendor.category)}</span>
                       </div>
                       
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Mail size={14} style={{ color: "#6b7280" }} />
-                        <span style={{ fontSize: "14px", color: "#374151" }}>{vendor.email}</span>
+                        <span style={{ fontSize: "14px", color: "#374151" }}>{String(vendor.email)}</span>
                       </div>
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "12px", borderTop: "1px solid #f3f4f6" }}>
                       <div>
                         <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 2px 0" }}>
-                          {vendor.totalInvoices} invoices • {formatCurrency(vendor.totalAmount)}
+                          {String(vendor.totalInvoices)} invoices • {formatCurrency(vendor.totalAmount)}
                         </p>
                         {vendor.lastPaymentDate && (
                           <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>

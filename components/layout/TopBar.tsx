@@ -128,10 +128,10 @@ export function TopBar({ currentPage }: { currentPage: string }) {
                     >
                       <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: notifColors[n.type] ?? "#6b7280", marginTop: 5, flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 2px 0" }}>{n.title}</p>
-                        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px 0", lineHeight: 1.5 }}>{n.message}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 2px 0" }}>{String(n.title)}</p>
+                        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px 0", lineHeight: 1.5 }}>{String(n.message)}</p>
                         <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>
-                          {n.createdAt ? new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                          {n.createdAt ? new Date(String(n.createdAt)).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
                         </p>
                       </div>
                       {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#10b981", flexShrink: 0, marginTop: 5 }} />}

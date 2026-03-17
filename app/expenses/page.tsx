@@ -304,7 +304,7 @@ export default function ExpensesPage() {
                           {expense.employeeName}
                         </div>
                         <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {expense.department}
+                          {String(expense.department)}
                         </div>
                       </div>
                     </td>
@@ -449,17 +449,17 @@ export default function ExpensesPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Employee</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{selectedExpense.employeeName}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.employeeName)}</p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Department</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{selectedExpense.department}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.department)}</p>
                   </div>
                   
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Category</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{selectedExpense.category}</p>
+                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{String(selectedExpense.category)}</p>
                   </div>
                   
                   <div>
@@ -490,7 +490,7 @@ export default function ExpensesPage() {
                   <div>
                     <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Description</label>
                     <p style={{ fontSize: "14px", color: "#111827", margin: 0, lineHeight: "1.5" }}>
-                      {selectedExpense.description}
+                      {String(selectedExpense.description)}
                     </p>
                   </div>
                 </div>

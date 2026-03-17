@@ -57,6 +57,19 @@ interface SummaryData {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const formatDate = (date: any) => {
+  if (!date) return "—";
+  try {
+    if (date?.toDate) return date.toDate()
+      .toLocaleDateString("en-IN", { 
+        day: "numeric", month: "short", year: "numeric" 
+      });
+    return new Date(date).toLocaleDateString("en-IN", { 
+      day: "numeric", month: "short", year: "numeric" 
+    });
+  } catch { return "—"; }
+};
+
 const formatINR = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -598,13 +611,7 @@ export default function DashboardPage() {
                         {formatINR(exp.amount)}
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151", verticalAlign: "top" }}>
-                        {exp.date
-                          ? new Date(exp.date).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"}
+                        {formatDate(exp.date)}
                       </td>
                       <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                         <StatusBadge status={exp.status} />

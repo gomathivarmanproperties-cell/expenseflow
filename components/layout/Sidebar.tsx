@@ -354,7 +354,7 @@ export function Sidebar() {
               opacity: 0.9
             }}>
               {roleDisplayName}
-              {user?.department && ` • ${user.department}`}
+              {user?.department && ` • ${String(user.department)}`}
             </div>
           </div>
         </div>
@@ -471,7 +471,7 @@ export function Sidebar() {
             </div>
             {user?.designation && (
               <div style={{ color: "#94a3b8", fontSize: "11px" }}>
-                {user.designation}
+                {String(user.designation)}
               </div>
             )}
           </div>
