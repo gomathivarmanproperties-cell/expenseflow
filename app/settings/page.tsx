@@ -694,7 +694,12 @@ export default function SettingsPage() {
             label="Financial Year Start Month"
             value={companySettings.financialYearStart}
             onChange={financialYearStart => setCompanySettings(prev => ({ ...prev, financialYearStart }))}
-            options={["April", "January", "July", "October"]}
+            options={[
+              { value: "April", label: "April" },
+              { value: "January", label: "January" },
+              { value: "July", label: "July" },
+              { value: "October", label: "October" }
+            ]}
           />
           
           <div>
