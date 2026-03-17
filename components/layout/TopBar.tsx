@@ -168,8 +168,8 @@ export function TopBar({ currentPage }: { currentPage: string }) {
     <div
       style={{
         height: "64px",
-        backgroundColor: "white",
-        borderBottom: "1px solid #e5e7eb",
+        backgroundColor: "#ffffff",
+        borderBottom: "1px solid #e2e8f0",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -177,42 +177,132 @@ export function TopBar({ currentPage }: { currentPage: string }) {
         paddingRight: "24px",
       }}
     >
-      {/* LEFT - Current page name */}
+      {/* LEFT - Page title */}
       <div>
         <h1
           style={{
-            fontSize: "20px",
+            fontSize: "22px",
             fontWeight: "600",
-            color: "#111827",
+            color: "#0f172a",
             margin: 0,
+            fontFamily: "'Instrument Serif', Georgia, serif",
+            letterSpacing: "-0.02em"
           }}
         >
           {formatPageName(currentPage)}
         </h1>
       </div>
 
-      {/* RIGHT - Role badge + notifications + avatar + logout */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-
-        {/* Role badge */}
-        <div
-          style={{
-            backgroundColor: roleColor.backgroundColor,
-            color: roleColor.color,
-            padding: "4px 12px",
-            borderRadius: "9999px",
-            fontSize: "12px",
-            fontWeight: "600",
-          }}
-        >
+      {/* RIGHT - Role badge, notifications, avatar, logout */}
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Role Badge */}
+        <div className={`badge ${
+          user.role === 'admin' ? 'badge-gold' :
+          user.role === 'finance' ? 'badge-blue' :
+          user.role === 'manager' ? 'badge-orange' :
+          'badge-slate'
+        }`}>
           {roleDisplayName}
         </div>
 
         {/* Notifications */}
         <div style={{ position: "relative" }}>
           <button
-            onClick={() => {
-              setShowNotifications(!showNotifications);
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="btn-ghost"
+            style={{
+              width: "38px",
+              height: "38px",
+              padding: "0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "10px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#fef3c7";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <Bell size={18} color="#64748b" />
+            {unreadCount > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "6px",
+                  right: "6px",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#f59e0b",
+                  border: "2px solid white",
+                }}
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Avatar */}
+        <button
+          onClick={() => router.push("/profile")}
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#10b981",
+            border: "2px solid #f59e0b",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontWeight: "600",
+            fontSize: "14px",
+            cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+        >
+          {getInitials(user.displayName || user.email || "User")}
+        </button>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="btn-ghost"
+          style={{
+            padding: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "10px",
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#fee2e2";
+            e.currentTarget.querySelector("svg").style.color = "#dc2626";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.querySelector("svg").style.color = "#64748b";
+          }}
+        >
+          <Settings size={18} color="#64748b" />
+        </button>
+      </div>
               if (showNotifications) markAllAsRead();
             }}
             style={{

@@ -159,40 +159,62 @@ export function Sidebar() {
       {/* TOP SECTION - Logo Area */}
       <div 
         style={{
-          height: "64px",
-          borderBottom: "1px solid #065f46",
+          height: "80px",
+          borderBottom: "1px solid rgba(245, 158, 11, 0.2)",
           display: "flex",
           alignItems: "center",
-          paddingLeft: "16px",
-          paddingRight: "16px"
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* Small green square with "EF" */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          {/* EF mark in gold on slightly lighter green */}
           <div 
             style={{
-              width: "32px",
-              height: "32px",
-              backgroundColor: "#10b981",
+              width: "40px",
+              height: "40px",
+              backgroundColor: "#065f46",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: "4px"
+              borderRadius: "10px",
+              border: "2px solid #f59e0b",
+              boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
             }}
           >
-            <span style={{ color: "white", fontSize: "14px", fontWeight: "bold" }}>EF</span>
+            <span style={{ color: "#f59e0b", fontSize: "16px", fontWeight: "700", letterSpacing: "0.05em" }}>EF</span>
           </div>
           
-          {/* "ExpenseFlow" text */}
-          <span style={{ color: "white", fontSize: "16px", fontWeight: "600" }}>
+          {/* "ExpenseFlow" in Instrument Serif, white, elegant */}
+          <span style={{ 
+            color: "white", 
+            fontSize: "20px", 
+            fontWeight: "600",
+            fontFamily: "'Instrument Serif', Georgia, serif",
+            letterSpacing: "-0.02em"
+          }}>
             ExpenseFlow
           </span>
         </div>
       </div>
 
       {/* MIDDLE SECTION - Navigation */}
-      <div style={{ flex: 1, padding: "16px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div style={{ flex: 1, padding: "20px 16px" }}>
+        {/* Navigation Label */}
+        <div style={{
+          color: "#f59e0b",
+          fontSize: "10px",
+          fontWeight: "600",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          marginBottom: "16px",
+          opacity: 0.8
+        }}>
+          Navigation
+        </div>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -205,42 +227,127 @@ export function Sidebar() {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "10px 16px",
-                  borderRadius: "8px",
-                  backgroundColor: isActive ? "#10b981" : "transparent",
-                  color: loading ? "#6ee7b7" : "white",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  backgroundColor: isActive ? "#065f46" : "transparent",
+                  color: loading ? "rgba(255, 255, 255, 0.4)" : "white",
                   textDecoration: "none",
                   fontSize: "14px",
                   fontWeight: "500",
-                  transition: "background-color 0.2s ease"
+                  transition: "all 0.15s ease",
+                  borderLeft: isActive ? "3px solid #f59e0b" : "3px solid transparent",
+                  paddingLeft: isActive ? "13px" : "16px"
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "#065f46";
+                    e.currentTarget.style.color = "white";
+                    e.currentTarget.style.opacity = "1";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = "white";
+                    e.currentTarget.style.opacity = "1";
                   }
                 }}
               >
-                <Icon size={18} style={{ flexShrink: 0 }} />
-                <span>{item.name}</span>
+                <Icon 
+                  size={18} 
+                  style={{ 
+                    flexShrink: 0,
+                    opacity: loading ? 0.4 : (isActive ? 1 : 0.4),
+                    color: isActive ? "#f59e0b" : "inherit"
+                  }} 
+                />
+                <span style={{
+                  color: isActive ? "#f59e0b" : "inherit",
+                  fontWeight: isActive ? "600" : "500"
+                }}>{item.name}</span>
               </Link>
             );
           })}
         </div>
       </div>
 
-      {/* BOTTOM NAVIGATION - Profile & Settings */}
+      {/* BOTTOM SECTION - User Card */}
       <div 
         style={{
-          borderTop: "1px solid #065f46",
-          padding: "16px"
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "16px",
+          background: "rgba(0, 0, 0, 0.15)",
+          backdropFilter: "blur(10px)"
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {/* User Profile Card */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "12px",
+          borderRadius: "10px",
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          transition: "all 0.2s ease",
+          cursor: "pointer"
+        }}
+        onClick={() => window.location.href = "/profile"}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.08)";
+          e.currentTarget.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}
+        >
+          {/* Avatar with gold ring */}
+          <div style={{
+            position: "relative",
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#10b981",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontWeight: "600",
+            fontSize: "14px",
+            border: "2px solid #f59e0b",
+            boxShadow: "0 0 0 4px rgba(245, 158, 11, 0.2)"
+          }}>
+            {getInitials(user?.displayName || user?.email || "User")}
+          </div>
+          
+          {/* User Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "500",
+              marginBottom: "2px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}>
+              {user?.displayName || user?.email?.split("@")[0] || "User"}
+            </div>
+            <div style={{
+              color: "#6ee7b7",
+              fontSize: "12px",
+              fontWeight: "400",
+              opacity: 0.9
+            }}>
+              {roleDisplayName}
+              {user?.department && ` • ${user.department}`}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "12px" }}>
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -258,26 +365,39 @@ export function Sidebar() {
                   gap: "12px",
                   padding: "10px 16px",
                   borderRadius: "8px",
-                  backgroundColor: isActive ? "#10b981" : "transparent",
+                  backgroundColor: isActive ? "#065f46" : "transparent",
                   color: "white",
                   textDecoration: "none",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: "500",
-                  transition: "background-color 0.2s ease"
+                  transition: "all 0.15s ease",
+                  borderLeft: isActive ? "3px solid #f59e0b" : "3px solid transparent",
+                  paddingLeft: isActive ? "13px" : "16px",
+                  opacity: loading ? 0.4 : 1
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) {
+                  if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "#065f46";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) {
+                  if (!isActive && !loading) {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }
                 }}
               >
-                <Icon size={18} style={{ flexShrink: 0 }} />
-                <span>{item.name}</span>
+                <Icon 
+                  size={16} 
+                  style={{ 
+                    flexShrink: 0,
+                    opacity: loading ? 0.4 : (isActive ? 1 : 0.4),
+                    color: isActive ? "#f59e0b" : "inherit"
+                  }} 
+                />
+                <span style={{
+                  color: isActive ? "#f59e0b" : "inherit",
+                  fontWeight: isActive ? "600" : "500"
+                }}>{item.name}</span>
               </Link>
             );
           })}

@@ -1,3 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:wght@400;500;600;700&display=swap');
+
+/* Design System Variables */
+:root {
+  /* Colors */
+  --primary: #064e3b;
+  --accent: #10b981;
+  --gold: #f59e0b;
+  --gold-light: #fef3c7;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text-1: #0f172a;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+}
+
+/* Base Styles */
 *,
 *::before,
 *::after {
@@ -12,28 +30,127 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  background-color: #f0fdf4;
-  color: #0f172a;
+  font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Typography Classes */
+.font-instrument-serif {
+  font-family: 'Instrument Serif', Georgia, serif;
 }
 
-main {
-  padding: 1.5rem;
+/* Component Classes */
+.card {
+  background-color: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid var(--border);
+}
+
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+.btn {
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-2);
+}
+
+.btn-ghost:hover {
+  background-color: var(--gold-light);
+  color: var(--gold);
+}
+
+.input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background-color: var(--surface);
+  color: var(--text-1);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.badge {
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-gold {
+  background-color: var(--gold-light);
+  color: #b45309;
+}
+
+.badge-blue {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-orange {
+  background-color: #fed7aa;
+  color: #ea580c;
+}
+
+.badge-slate {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Layout Classes */
+.page-padding {
+  padding: 24px;
 }
 
 /* Dashboard Layout Colors */
 .dashboard-bg {
-  background-color: #f0fdf4;
+  background-color: var(--bg);
 }
 
 .sidebar-bg {
-  background-color: #064e3b;
+  background-color: var(--primary);
 }
 
 .sidebar-text {
@@ -41,17 +158,12 @@ main {
 }
 
 .sidebar-active {
-  background-color: #10b981;
-  color: white;
+  background-color: #065f46;
+  color: var(--gold);
 }
 
 .topbar-bg {
-  background-color: #ffffff;
-}
-
-.primary-accent {
-  background-color: #10b981;
-  color: white;
+  background-color: var(--surface);
 }
 
 /* Auth layout */
@@ -60,15 +172,15 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  background: radial-gradient(circle at top, #064e3b, #065f46 55%);
+  padding: 24px;
+  background: radial-gradient(circle at top, var(--primary), #065f46 55%);
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
   border-radius: 16px;
-  padding: 1.75rem 1.75rem 2rem;
+  padding: 28px 28px 32px;
   background-color: rgba(6, 78, 59, 0.95);
   border: 1px solid rgba(16, 185, 129, 0.6);
   box-shadow: 0 24px 60px rgba(6, 78, 59, 0.9);
@@ -77,28 +189,28 @@ main {
 .auth-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .auth-logo {
-  height: 2.5rem;
-  width: 2.5rem;
-  border-radius: 999px;
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #d1fae5;
-  background: radial-gradient(circle at 30% 0, #10b981, #064e3b 55%);
+  background: radial-gradient(circle at 30% 0, var(--accent), var(--primary) 55%);
   box-shadow: 0 10px 30px rgba(16, 185, 129, 0.35);
 }
 
 .auth-title {
-  font-size: 1.2rem;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
@@ -106,23 +218,23 @@ main {
 }
 
 .auth-subtitle {
-  margin: 0.15rem 0 0;
-  font-size: 0.8rem;
+  margin: 2px 0 0;
+  font-size: 13px;
   color: #a7f3d0;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  margin-top: 0.25rem;
+  gap: 14px;
+  margin-top: 4px;
 }
 
 .auth-label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.8rem;
+  gap: 6px;
+  font-size: 13px;
 }
 
 .auth-label span {
@@ -130,20 +242,20 @@ main {
 }
 
 .auth-input {
-  border-radius: 0.55rem;
+  border-radius: 10px;
   border: 1px solid #065f46;
-  background-color: #064e3b;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.85rem;
+  background-color: var(--primary);
+  padding: 12px 16px;
+  font-size: 14px;
   color: #d1fae5;
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
 }
 
 .auth-input:focus {
-  border-color: #10b981;
+  border-color: var(--accent);
   box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
-  background-color: #064e3b;
+  background-color: var(--primary);
 }
 
 .auth-input::placeholder {
@@ -151,21 +263,21 @@ main {
 }
 
 .auth-error {
-  margin: 0.3rem 0 0;
-  font-size: 0.8rem;
+  margin: 5px 0 0;
+  font-size: 13px;
   color: #fecaca;
 }
 
 .auth-button {
-  margin-top: 0.5rem;
+  margin-top: 8px;
   width: 100%;
   border: none;
-  border-radius: 999px;
-  padding: 0.65rem 0.75rem;
-  font-size: 0.85rem;
+  border-radius: 50px;
+  padding: 12px 16px;
+  font-size: 14px;
   font-weight: 500;
   color: white;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--accent), #059669);
   cursor: pointer;
   transition: transform 80ms ease, box-shadow 80ms ease, opacity 80ms ease;
   box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
