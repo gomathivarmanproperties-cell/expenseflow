@@ -195,7 +195,7 @@ export default function DashboardPage() {
         ? query(collection(db, "expenses"), orderBy("date", "desc"), limit(10))
         : role === "manager"
         ? query(collection(db, "expenses"), orderBy("date", "desc"), limit(10))
-        : query(collection(db, "expenses"), where("submittedBy", "==", user.uid), orderBy("date", "desc"), limit(10));
+        : query(collection(db, "expenses"), orderBy("date", "desc"), limit(20)); // Fetch more for employee filtering
 
     unsubs.push(
       onSnapshot(expenseQuery, (snap) => {
@@ -207,6 +207,18 @@ export default function DashboardPage() {
 
         snap.forEach((doc) => {
           const d = doc.data();
+          
+          // Client-side filtering for employees
+          if (role === "employee") {
+            const isEmployeeExpense = 
+              d.submittedBy === user.uid || 
+              d.userId === user.uid || 
+              d.createdBy === user.uid || 
+              d.employeeId === user.uid;
+            
+            if (!isEmployeeExpense) return; // Skip if not employee's expense
+          }
+          
           const expense: Expense = {
             id: doc.id,
             employeeName: d.employeeName ?? d.fullName ?? "Unknown",
@@ -603,8 +615,36 @@ export default function DashboardPage() {
                   fontSize: "14px"
                 }}>
                   <div style={{ marginBottom: "8px" }}>📋</div>
-                  <div>No recent expenses found</div>
-                  <div style={{ fontSize: "12px", marginTop: "4px" }}>Submitted expenses will appear here</div>
+                  <div>
+                    {role === "employee" 
+                      ? "No expenses submitted yet." 
+                      : "No recent expenses found"
+                    }
+                  </div>
+                  <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                    {role === "employee" 
+                      ? "Click 'New Expense' to get started." 
+                      : "Submitted expenses will appear here"
+                    }
+                  </div>
+                  {role === "employee" && (
+                    <button
+                      onClick={() => window.location.href = "/expenses"}
+                      style={{
+                        marginTop: "16px",
+                        padding: "8px 16px",
+                        backgroundColor: "#10b981",
+                        color: "#fff",
+                        borderRadius: 8,
+                        border: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                    >
+                      New Expense
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -62,6 +62,14 @@ export function Sidebar() {
     admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
   };
 
+  // Default module access structure (same as settings page)
+  const defaultModuleAccess = {
+    expenses: { employee: true, manager: true, finance: true },
+    vendors: { employee: false, manager: true, finance: true },
+    budgets: { employee: false, manager: true, finance: true },
+    auditTrail: { employee: false, manager: true, finance: true }
+  };
+
   const [moduleAccess, setModuleAccess] = useState(defaultRoleAccess[user?.role || "employee"] || []);
 
   // Listen for real-time module access updates from Firestore
@@ -75,10 +83,10 @@ export function Sidebar() {
         
         // Convert Firestore data to role access format
         const roleAccessFromDB = {
-          expenses: accessData.expenses?.[userRole] || defaultRoleAccess[userRole].includes("expenses"),
-          vendors: accessData.vendors?.[userRole] || defaultRoleAccess[userRole].includes("vendors"),
-          budgets: accessData.budgets?.[userRole] || defaultRoleAccess[userRole].includes("budgets"),
-          auditTrail: accessData.auditTrail?.[userRole] || defaultRoleAccess[userRole].includes("audit-trail"),
+          expenses: accessData.expenses?.[userRole] || defaultModuleAccess.expenses[userRole as keyof typeof defaultModuleAccess.expenses],
+          vendors: accessData.vendors?.[userRole] || defaultModuleAccess.vendors[userRole as keyof typeof defaultModuleAccess.vendors],
+          budgets: accessData.budgets?.[userRole] || defaultModuleAccess.budgets[userRole as keyof typeof defaultModuleAccess.budgets],
+          auditTrail: accessData.auditTrail?.[userRole] || defaultModuleAccess.auditTrail[userRole as keyof typeof defaultModuleAccess.auditTrail],
         };
 
         // Build allowed pages array based on module access
@@ -89,12 +97,24 @@ export function Sidebar() {
         if (roleAccessFromDB.auditTrail) allowedPages.push("audit-trail");
         
         // Always include dashboard
-        if (!allowedPages.includes("dashboard")) allowedPages.unshift("dashboard");
+        allowedPages.push("dashboard");
         
         setModuleAccess(allowedPages);
       } else {
-        // Fallback to default if doc doesn't exist yet
-        setModuleAccess(defaultRoleAccess[user?.role || "employee"] || []);
+        // Use default module access if doc doesn't exist
+        const userRole = user?.role || "employee";
+        const defaultAccess = defaultModuleAccess;
+        
+        const allowedPages = [];
+        if (defaultAccess.expenses[userRole as keyof typeof defaultAccess.expenses]) allowedPages.push("expenses");
+        if (defaultAccess.vendors[userRole as keyof typeof defaultAccess.vendors]) allowedPages.push("vendors");
+        if (defaultAccess.budgets[userRole as keyof typeof defaultAccess.budgets]) allowedPages.push("budgets");
+        if (defaultAccess.auditTrail[userRole as keyof typeof defaultAccess.auditTrail]) allowedPages.push("audit-trail");
+        
+        // Always include dashboard
+        allowedPages.push("dashboard");
+        
+        setModuleAccess(allowedPages);
       }
     });
 

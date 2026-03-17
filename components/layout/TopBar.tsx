@@ -3,8 +3,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  onSnapshot, 
+  updateDoc, 
+  doc, 
+  writeBatch,
+  Timestamp 
+} from "firebase/firestore";
 import { 
   Bell, 
   Settings, 
@@ -21,7 +33,7 @@ interface Notification {
   message: string;
   type: "approval" | "rejection" | "reminder" | "info";
   read: boolean;
-  createdAt: Date;
+  createdAt: Timestamp | Date;
 }
 
 const roleBadgeColors = {
@@ -45,31 +57,43 @@ export function TopBar({ currentPage }: { currentPage: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch notifications
+  // Fetch notifications from Firestore
   useEffect(() => {
-    // This would be implemented with actual Firestore queries
-    // For now, using dummy data
-    const dummyNotifications: Notification[] = [
-      {
-        id: '1',
-        title: 'Expense Approved',
-        message: 'Your expense for ₹5,000 has been approved',
-        type: 'approval',
-        read: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: '2',
-        title: 'Reminder',
-        message: 'Submit your monthly expense report',
-        type: 'reminder',
-        read: false,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-      }
-    ];
-    
-    setNotifications(dummyNotifications);
-    setUnreadCount(dummyNotifications.filter(n => !n.read).length);
+    if (!user) return;
+
+    const notificationsQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+
+    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+      const notificationsData: Notification[] = [];
+      let unread = 0;
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const notification: Notification = {
+          id: doc.id,
+          title: data.title || "Notification",
+          message: data.message || "",
+          type: data.type || "info",
+          read: data.read || false,
+          createdAt: data.createdAt || new Date()
+        };
+        notificationsData.push(notification);
+        
+        if (!notification.read) {
+          unread++;
+        }
+      });
+
+      setNotifications(notificationsData);
+      setUnreadCount(unread);
+    });
+
+    return unsubscribe;
   }, [user]);
 
   if (!user) return null;
@@ -79,16 +103,29 @@ export function TopBar({ currentPage }: { currentPage: string }) {
     router.push("/login");
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "notifications", id), { read: true });
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
+  const markAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (unreadNotifications.length === 0) return;
+
+      const batch = writeBatch(db);
+      unreadNotifications.forEach((notification) => {
+        const docRef = doc(db, "notifications", notification.id);
+        batch.update(docRef, { read: true });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -331,6 +368,20 @@ export function TopBar({ currentPage }: { currentPage: string }) {
                       </div>
                     </div>
                   ))
+                )}
+                {notifications.length === 0 && (
+                  <div style={{
+                    padding: "40px 20px",
+                    textAlign: "center",
+                    color: "#6b7280",
+                    fontSize: "14px"
+                  }}>
+                    <div style={{ marginBottom: "8px" }}>🔔</div>
+                    <div>No notifications</div>
+                    <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                      You're all caught up!
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

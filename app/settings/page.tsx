@@ -256,6 +256,15 @@ export default function SettingsPage() {
         const moduleDoc = await getDoc(doc(db, "appConfig", "moduleAccess"));
         if (moduleDoc.exists()) {
           setModuleAccess(moduleDoc.data() as ModuleAccess);
+        } else {
+          // Use default values if doc doesn't exist
+          const defaultModuleAccess: ModuleAccess = {
+            expenses: { employee: true, manager: true, finance: true },
+            vendors: { employee: false, manager: true, finance: true },
+            budgets: { employee: false, manager: true, finance: true },
+            auditTrail: { employee: false, manager: true, finance: true }
+          };
+          setModuleAccess(defaultModuleAccess);
         }
 
         // Load company settings
@@ -295,7 +304,7 @@ export default function SettingsPage() {
   const saveModuleAccess = async () => {
     try {
       await setDoc(doc(db, "appConfig", "moduleAccess"), moduleAccess);
-      showToast("Module access saved successfully!", "success");
+      showToast("Module access updated!", "success");
     } catch {
       showToast("Failed to save module access.", "error");
     }
