@@ -6,6 +6,14 @@ import { collection, query, orderBy, onSnapshot, addDoc, doc, updateDoc, where }
 import { db } from "@/lib/firebase";
 import { Search, Filter, Plus, Upload, Mail, Building, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
 
+// INR currency formatter
+const formatINR = (amount: number) =>
+  new Intl.NumberFormat("en-IN", { 
+    style: "currency", 
+    currency: "INR", 
+    maximumFractionDigits: 0 
+  }).format(amount);
+
 interface Vendor {
   id: string;
   name: string;
@@ -209,10 +217,7 @@ export default function VendorsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    return formatINR(amount);
   };
 
   const canManageVendors = user?.role === "admin" || user?.role === "finance";
@@ -490,23 +495,23 @@ export default function VendorsPage() {
                         e.currentTarget.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#fafafa";
                       }}
                     >
-                      <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827" }}>
+                      <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {invoice.vendorName}
                       </td>
-                      <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
+                      <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {invoice.invoiceNumber}
                       </td>
-                      <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827" }}>
+                      <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top" }}>
                         {formatCurrency(invoice.amount)}
                       </td>
-                      <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
+                      <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top" }}>
                         {new Date(invoice.dueDate).toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
                       })}
                       </td>
-                      <td style={{ padding: "16px" }}>
+                      <td style={{ padding: "16px", verticalAlign: "top" }}>
                         {getStatusBadge(invoice.status)}
                       </td>
                     </tr>

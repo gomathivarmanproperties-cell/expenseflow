@@ -584,16 +584,19 @@ export default function DashboardPage() {
                         (e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fff" : "#fafafa")
                       }
                     >
-                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#111827" }}>
-                        {exp.employeeName}
+                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#111827", verticalAlign: "middle" }}>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <div>{exp.employeeName}</div>
+                          <div style={{ fontSize: 12, color: "#6b7280" }}>{exp.department}</div>
+                        </div>
                       </td>
-                      <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {exp.category}
                       </td>
-                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#111827", verticalAlign: "top" }}>
                         {formatINR(exp.amount)}
                       </td>
-                      <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 14, color: "#374151", verticalAlign: "top" }}>
                         {exp.date
                           ? new Date(exp.date).toLocaleDateString("en-IN", {
                               day: "numeric",
@@ -602,7 +605,7 @@ export default function DashboardPage() {
                             })
                           : "—"}
                       </td>
-                      <td style={{ padding: "14px 16px" }}>
+                      <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
                         <StatusBadge status={exp.status} />
                       </td>
                     </tr>

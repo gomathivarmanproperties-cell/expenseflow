@@ -6,6 +6,14 @@ import { collection, query, orderBy, onSnapshot, where, doc, updateDoc } from "f
 import { db } from "@/lib/firebase";
 import { Search, Filter, Plus, Download, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
 
+// INR currency formatter
+const formatINR = (amount: number) =>
+  new Intl.NumberFormat("en-IN", { 
+    style: "currency", 
+    currency: "INR", 
+    maximumFractionDigits: 0 
+  }).format(amount);
+
 interface Expense {
   id: string;
   employeeName: string;
@@ -96,10 +104,7 @@ export default function ExpensesPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    return formatINR(amount);
   };
 
   const filteredExpenses = expenses.filter(expense => {
@@ -293,34 +298,34 @@ export default function ExpensesPage() {
                       e.currentTarget.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#fafafa";
                     }}
                   >
-                    <td style={{ padding: "16px" }}>
-                      <div>
+                    <td style={{ padding: "16px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
                         <div style={{ fontSize: "14px", fontWeight: "500", color: "#111827", marginBottom: "2px" }}>
                           {expense.employeeName}
                         </div>
-                        <div style={{ fontSize: "13px", color: "#6b7280" }}>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
                           {expense.department}
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
+                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {expense.category}
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827" }}>
+                    <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top" }}>
                       {formatCurrency(expense.amount)}
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151" }}>
+                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top" }}>
                       {new Date(expense.date).toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
                       })}
                     </td>
-                    <td style={{ padding: "16px" }}>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
                       {getStatusBadge(expense.status)}
                     </td>
                     {canApproveReject && (
-                      <td style={{ padding: "16px" }}>
+                      <td style={{ padding: "16px", verticalAlign: "top" }}>
                         <div style={{ display: "flex", gap: "8px" }}>
                           {expense.status === "pending" && (
                             <>

@@ -22,7 +22,9 @@ import {
   Receipt,
   Users,
   FileText,
-  Lock
+  Lock,
+  Tag,
+  Building
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -244,6 +246,9 @@ export default function SettingsPage() {
 
   const [categories, setCategories] = useState<string[]>(["Travel", "Food", "Accommodation", "Office Supplies", "Medical", "Entertainment", "Training", "Petrol", "Other"]);
 
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState<"reminder-rules" | "module-access" | "categories" | "company">("reminder-rules");
+
   // Load existing data on mount
   useEffect(() => {
     if (!user) return;
@@ -372,8 +377,159 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", margin: 0 }}>Admin Settings</h1>
       </div>
 
-      {/* SECTION 1 - REMINDER RULES */}
-      <SectionCard title="Reminder Rules" icon={<Bell size={16} />}>
+      {/* Tab Navigation */}
+      <div style={{
+        backgroundColor: "white",
+        borderBottom: "1px solid #e2e8f0",
+        marginBottom: 24,
+        borderRadius: 12,
+        overflow: "hidden"
+      }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0" }}>
+          <button
+            onClick={() => setActiveTab("reminder-rules")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: activeTab === "reminder-rules" ? "2px solid #f59e0b" : "2px solid transparent",
+              color: activeTab === "reminder-rules" ? "#f59e0b" : "#64748b",
+              fontSize: "14px",
+              fontWeight: activeTab === "reminder-rules" ? "600" : "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== "reminder-rules") {
+                e.currentTarget.style.color = "#475569";
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== "reminder-rules") {
+                e.currentTarget.style.color = "#64748b";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }
+            }}
+          >
+            <Bell size={16} />
+            Reminder Rules
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("module-access")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: activeTab === "module-access" ? "2px solid #f59e0b" : "2px solid transparent",
+              color: activeTab === "module-access" ? "#f59e0b" : "#64748b",
+              fontSize: "14px",
+              fontWeight: activeTab === "module-access" ? "600" : "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== "module-access") {
+                e.currentTarget.style.color = "#475569";
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== "module-access") {
+                e.currentTarget.style.color = "#64748b";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }
+            }}
+          >
+            <Shield size={16} />
+            Module Access
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("categories")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: activeTab === "categories" ? "2px solid #f59e0b" : "2px solid transparent",
+              color: activeTab === "categories" ? "#f59e0b" : "#64748b",
+              fontSize: "14px",
+              fontWeight: activeTab === "categories" ? "600" : "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== "categories") {
+                e.currentTarget.style.color = "#475569";
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== "categories") {
+                e.currentTarget.style.color = "#64748b";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }
+            }}
+          >
+            <Tag size={16} />
+            Categories
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("company")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              backgroundColor: "transparent",
+              border: "none",
+              borderBottom: activeTab === "company" ? "2px solid #f59e0b" : "2px solid transparent",
+              color: activeTab === "company" ? "#f59e0b" : "#64748b",
+              fontSize: "14px",
+              fontWeight: activeTab === "company" ? "600" : "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== "company") {
+                e.currentTarget.style.color = "#475569";
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== "company") {
+                e.currentTarget.style.color = "#64748b";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }
+            }}
+          >
+            <Building size={16} />
+            Company
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "reminder-rules" && (
         <div style={{ display: "grid", gap: 24 }}>
           
           {/* Expense Submission Reminder */}
@@ -576,10 +732,9 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      </SectionCard>
+      )}
 
-      {/* SECTION 2 - MODULE ACCESS CONTROL */}
-      <SectionCard title="Module Access Control" icon={<Settings size={16} />}>
+      {activeTab === "module-access" && (
         <div style={{
           backgroundColor: "#fff",
           border: "1px solid #e5e7eb",
@@ -864,57 +1019,38 @@ export default function SettingsPage() {
             );
           })}
         </div>
+      )}
 
-        {/* Save Button */}
-        <div style={{ textAlign: "right", marginTop: 24 }}>
-          <button
-            onClick={saveModuleAccess}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#10b981",
-              color: "#fff",
-              borderRadius: 8,
-              border: "none",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              width: "100%",
-              justifyContent: "center",
-              transition: "background-color 0.2s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#059669"}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#10b981"}
-          >
-            <Save size={16} />
-            Save Module Access
-          </button>
-        </div>
-      </SectionCard>
-
-      {/* SECTION 3 - EXPENSE CATEGORIES */}
-      <SectionCard title="Expense Categories" icon={<DollarSign size={16} />}>
+      {activeTab === "categories" && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
             <div style={{ flex: 1, marginBottom: 0 }}>
               <TextInput
                 label="Add new category"
                 value=""
-                onChange={() => {}}
                 placeholder="Enter category name"
+                onChange={() => {}}
               />
             </div>
             <button
               onClick={addCategory}
               style={{
-                padding: "8px 16px", backgroundColor: "#10b981", color: "#fff", borderRadius: 8, border: "none",
-                fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, height: "36px"
+                padding: "10px 16px",
+                backgroundColor: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: "24px"
               }}
             >
-              <Plus size={14} />
-              Add
+              <Plus size={16} />
+              Add Category
             </button>
           </div>
           
@@ -923,8 +1059,14 @@ export default function SettingsPage() {
               <div
                 key={index}
                 style={{
-                  backgroundColor: "#dcfce7", color: "#166534", padding: "6px 12px", borderRadius: 20,
-                  fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  color: "#374151"
                 }}
               >
                 {category}
@@ -932,8 +1074,15 @@ export default function SettingsPage() {
                   <button
                     onClick={() => removeCategory(category)}
                     style={{
-                      background: "none", border: "none", color: "#991b1b", cursor: "pointer",
-                      padding: 0, display: "flex", alignItems: "center"
+                      background: "none",
+                      border: "none",
+                      color: "#6b7280",
+                      cursor: "pointer",
+                      padding: "2px",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
                   >
                     <X size={12} />
@@ -942,24 +1091,23 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-        </div>
         
-        <div style={{ textAlign: "right", marginTop: 24 }}>
-          <button
-            onClick={saveExpenseCategories}
-            style={{
-              padding: "8px 16px", backgroundColor: "#10b981", color: "#fff", borderRadius: 8, border: "none",
-              fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
-            }}
-          >
-            <Save size={14} />
-            Save Categories
-          </button>
+          <div style={{ textAlign: "right", marginTop: 24 }}>
+            <button
+              onClick={saveExpenseCategories}
+              style={{
+                padding: "8px 16px", backgroundColor: "#10b981", color: "#fff", borderRadius: 8, border: "none",
+                fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
+              }}
+            >
+              <Save size={14} />
+              Save Categories
+            </button>
+          </div>
         </div>
-      </SectionCard>
+      )}
 
-      {/* SECTION 4 - COMPANY SETTINGS */}
-      <SectionCard title="Company Settings" icon={<Settings size={16} />}>
+      {activeTab === "company" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
           <TextInput
             label="Company Name"
@@ -980,63 +1128,19 @@ export default function SettingsPage() {
             ]}
           />
           
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, display: "block" }}>
-              Currency
-            </label>
-            <input
-              type="text"
-              value="INR ₹"
-              disabled
-              style={{
-                padding: "8px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 14,
-                width: "100%", boxSizing: "border-box", outline: "none", backgroundColor: "#f9fafb", color: "#6b7280"
-              }}
-            />
-          </div>
+          <SelectInput
+            label="Currency"
+            value={companySettings.currency}
+            onChange={currency => setCompanySettings(prev => ({ ...prev, currency }))}
+            options={[
+              { value: "INR", label: "INR (₹)" },
+              { value: "USD", label: "USD ($)" },
+              { value: "EUR", label: "EUR (€)" },
+              { value: "GBP", label: "GBP (£)" }
+            ]}
+          />
         </div>
-        
-        <div style={{ marginTop: 16 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, display: "block" }}>
-            Company Logo
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {companySettings.logoURL && (
-              <img
-                src={companySettings.logoURL}
-                alt="Company Logo"
-                style={{ width: 80, height: 80, borderRadius: 8, border: "1px solid #e5e7eb", objectFit: "cover" }}
-              />
-            )}
-            <label style={{
-              padding: "8px 16px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: 8,
-              fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
-            }}>
-              <Upload size={14} />
-              Upload Logo
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                style={{ display: "none" }}
-              />
-            </label>
-          </div>
-        </div>
-        
-        <div style={{ textAlign: "right", marginTop: 24 }}>
-          <button
-            onClick={saveCompanySettings}
-            style={{
-              padding: "8px 16px", backgroundColor: "#10b981", color: "#fff", borderRadius: 8, border: "none",
-              fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
-            }}
-          >
-            <Save size={14} />
-            Save Company Settings
-          </button>
-        </div>
-      </SectionCard>
+      )}
 
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} />}

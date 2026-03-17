@@ -59,7 +59,7 @@ export function Sidebar() {
     employee: ["dashboard", "expenses"],
     manager: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
     finance: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
-    admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
+    admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"],
   };
 
   // Default module access structure (same as settings page)
@@ -72,9 +72,22 @@ export function Sidebar() {
 
   const [moduleAccess, setModuleAccess] = useState(defaultRoleAccess[user?.role || "employee"] || []);
 
+  // Admin always sees everything, skip Firestore module config
+  if (user?.role === "admin") {
+    setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"]);
+  }
+
   // Listen for real-time module access updates from Firestore
   useEffect(() => {
     if (!user) return;
+
+    const userRole = user?.role || "employee";
+    
+    // Admin always sees everything, skip Firestore module config
+    if (userRole === "admin") {
+      setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"]);
+      return;
+    }
 
     const unsubscribe = onSnapshot(doc(db, "appConfig", "moduleAccess"), (doc) => {
       if (doc.exists()) {
