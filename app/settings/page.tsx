@@ -596,13 +596,14 @@ export default function SettingsPage() {
       <SectionCard title="Expense Categories" icon={<DollarSign size={16} />}>
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-            <TextInput
-              label="Add new category"
-              value=""
-              onChange={() => {}}
-              placeholder="Enter category name"
-              style={{ flex: 1, marginBottom: 0 }}
-            />
+            <div style={{ flex: 1, marginBottom: 0 }}>
+              <TextInput
+                label="Add new category"
+                value=""
+                onChange={() => {}}
+                placeholder="Enter category name"
+              />
+            </div>
             <button
               onClick={addCategory}
               style={{
