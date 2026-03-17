@@ -593,17 +593,137 @@ export default function SettingsPage() {
                     {module.charAt(0).toUpperCase() + module.slice(1)}
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
-                    <ToggleSwitch checked={access.employee} onChange={employee => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: employee as boolean, manager: prev[module as keyof ModuleAccess].manager, finance: prev[module as keyof ModuleAccess].finance } }))
-                    } disabled={true} />
+                    <label style={{ 
+                      display: "inline-flex", 
+                      alignItems: "center", 
+                      cursor: "pointer",
+                      userSelect: "none"
+                    }}>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type="checkbox"
+                          checked={access.employee}
+                          onChange={() => setModuleAccess(prev => ({
+                            ...prev,
+                            expenses: { 
+                              ...prev.expenses, 
+                              employee: !prev.expenses.employee 
+                            }
+                          }))}
+                          style={{ opacity: 0, width: 0, height: 0 }}
+                        />
+                        <div style={{
+                          width: 44,
+                          height: 24,
+                          backgroundColor: access.employee ? "#10b981" : "#d1d5db",
+                          borderRadius: 12,
+                          transition: "background-color 0.2s",
+                          cursor: "pointer"
+                        }}>
+                          <div style={{
+                            position: "absolute",
+                            top: 2,
+                            left: access.employee ? 22 : 2,
+                            width: 20,
+                            height: 20,
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                            transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }} />
+                        </div>
+                      </div>
+                    </label>
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
-                    <ToggleSwitch checked={access.manager} onChange={manager => setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], manager: manager as boolean, finance: prev[module as keyof ModuleAccess].finance } }))} />
+                    <label style={{ 
+                      display: "inline-flex", 
+                      alignItems: "center", 
+                      cursor: "pointer",
+                      userSelect: "none"
+                    }}>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type="checkbox"
+                          checked={access.manager}
+                          onChange={() => setModuleAccess(prev => ({
+                            ...prev,
+                            expenses: { 
+                              ...prev.expenses, 
+                              manager: !prev.expenses.manager,
+                              employee: prev.expenses.employee,
+                              finance: prev.expenses.finance
+                            }
+                          }))}
+                          style={{ opacity: 0, width: 0, height: 0 }}
+                        />
+                        <div style={{
+                          width: 44,
+                          height: 24,
+                          backgroundColor: access.manager ? "#10b981" : "#d1d5db",
+                          borderRadius: 12,
+                          transition: "background-color 0.2s",
+                          cursor: "pointer"
+                        }}>
+                          <div style={{
+                            position: "absolute",
+                            top: 2,
+                            left: access.manager ? 22 : 2,
+                            width: 20,
+                            height: 20,
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                            transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }} />
+                        </div>
+                      </div>
+                    </label>
                   </td>
                   <td style={{ padding: "12px", textAlign: "center" }}>
-                    <ToggleSwitch checked={access.finance} onChange={finance => 
-                      setModuleAccess(prev => ({ ...prev, [module]: { ...prev[module as keyof ModuleAccess], employee: prev[module as keyof ModuleAccess].employee, manager: prev[module as keyof ModuleAccess].manager, finance } }))
-                    } />
+                    <label style={{ 
+                      display: "inline-flex", 
+                      alignItems: "center", 
+                      cursor: "pointer",
+                      userSelect: "none"
+                    }}>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type="checkbox"
+                          checked={access.finance}
+                          onChange={() => setModuleAccess(prev => ({
+                            ...prev,
+                            expenses: { 
+                              ...prev.expenses, 
+                              manager: prev.expenses.manager,
+                              employee: prev.expenses.employee,
+                              finance: !prev.expenses.finance
+                            }
+                          }))}
+                          style={{ opacity: 0, width: 0, height: 0 }}
+                        />
+                        <div style={{
+                          width: 44,
+                          height: 24,
+                          backgroundColor: access.finance ? "#10b981" : "#d1d5db",
+                          borderRadius: 12,
+                          transition: "background-color 0.2s",
+                          cursor: "pointer"
+                        }}>
+                          <div style={{
+                            position: "absolute",
+                            top: 2,
+                            left: access.finance ? 22 : 2,
+                            width: 20,
+                            height: 20,
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                            transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }} />
+                        </div>
+                      </div>
+                    </label>
                   </td>
                 </tr>
               ))}
