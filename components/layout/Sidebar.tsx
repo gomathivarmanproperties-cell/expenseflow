@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { 
   LayoutDashboard, 
   Receipt, 
@@ -51,15 +54,59 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
 
-  const userRole = user?.role || "employee";
-  const allowedPages = roleAccess[userRole as keyof typeof roleAccess] || [];
+  // Default role access as fallback
+  const defaultRoleAccess = {
+    employee: ["dashboard", "expenses"],
+    manager: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
+    finance: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
+    admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
+  };
+
+  const [moduleAccess, setModuleAccess] = useState(defaultRoleAccess[user?.role || "employee"] || []);
+
+  // Listen for real-time module access updates from Firestore
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = onSnapshot(doc(db, "appConfig", "moduleAccess"), (doc) => {
+      if (doc.exists()) {
+        const accessData = doc.data();
+        const userRole = user?.role || "employee";
+        
+        // Convert Firestore data to role access format
+        const roleAccessFromDB = {
+          expenses: accessData.expenses?.[userRole] || defaultRoleAccess[userRole].includes("expenses"),
+          vendors: accessData.vendors?.[userRole] || defaultRoleAccess[userRole].includes("vendors"),
+          budgets: accessData.budgets?.[userRole] || defaultRoleAccess[userRole].includes("budgets"),
+          auditTrail: accessData.auditTrail?.[userRole] || defaultRoleAccess[userRole].includes("audit-trail"),
+        };
+
+        // Build allowed pages array based on module access
+        const allowedPages = [];
+        if (roleAccessFromDB.expenses) allowedPages.push("expenses");
+        if (roleAccessFromDB.vendors) allowedPages.push("vendors");
+        if (roleAccessFromDB.budgets) allowedPages.push("budgets");
+        if (roleAccessFromDB.auditTrail) allowedPages.push("audit-trail");
+        
+        // Always include dashboard
+        if (!allowedPages.includes("dashboard")) allowedPages.unshift("dashboard");
+        
+        setModuleAccess(allowedPages);
+      } else {
+        // Fallback to default if doc doesn't exist yet
+        setModuleAccess(defaultRoleAccess[user?.role || "employee"] || []);
+      }
+    });
+
+    return unsubscribe;
+  }, [user]);
 
   // Show all nav items while loading, filter by role after auth loads
   const filteredNavItems = loading 
     ? navigationItems 
     : navigationItems.filter(item => {
         const pageName = item.href.replace("/", "");
-        return allowedPages.includes(pageName);
+        return moduleAccess.includes(pageName);
       });
 
   const getInitials = (name: string) => {
