@@ -332,7 +332,7 @@ export function Sidebar() {
               textOverflow: "ellipsis",
               whiteSpace: "nowrap"
             }}>
-              {user?.displayName || user?.email?.split("@")[0] || "User"}
+              {user?.fullName || user?.email?.split("@")[0] || "User"}
             </div>
             <div style={{
               color: "#6ee7b7",
