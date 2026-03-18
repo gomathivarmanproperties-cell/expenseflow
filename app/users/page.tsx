@@ -242,7 +242,11 @@ export default function UsersPage() {
       bankName: "",
       accountNumber: "",
       ifscCode: "",
-      accountHolderName: ""
+      accountHolderName: "",
+      tempApproverId: "",
+      tempApproverName: "",
+      tempApproverFrom: "",
+      tempApproverUntil: ""
     });
     setEditingUser(null);
     setShowBankDetails(false);
