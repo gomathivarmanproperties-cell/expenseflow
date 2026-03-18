@@ -92,7 +92,7 @@ export function Sidebar() {
     
     // Admin always sees everything, skip Firestore module config
     if (userRole === "admin") {
-      setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"]);
+      setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail", "users", "settings"]);
       return;
     }
 
@@ -106,6 +106,7 @@ export function Sidebar() {
           expenses: accessData.expenses?.[userRole] || defaultModuleAccess.expenses[userRole as keyof typeof defaultModuleAccess.expenses],
           vendors: accessData.vendors?.[userRole] || defaultModuleAccess.vendors[userRole as keyof typeof defaultModuleAccess.vendors],
           budgets: accessData.budgets?.[userRole] || defaultModuleAccess.budgets[userRole as keyof typeof defaultModuleAccess.budgets],
+          projects: accessData.projects?.[userRole] || defaultModuleAccess.projects[userRole as keyof typeof defaultModuleAccess.projects],
           auditTrail: accessData.auditTrail?.[userRole] || defaultModuleAccess.auditTrail[userRole as keyof typeof defaultModuleAccess.auditTrail],
         };
 
@@ -114,6 +115,7 @@ export function Sidebar() {
         if (roleAccessFromDB.expenses) allowedPages.push("expenses");
         if (roleAccessFromDB.vendors) allowedPages.push("vendors");
         if (roleAccessFromDB.budgets) allowedPages.push("budgets");
+        if (roleAccessFromDB.projects) allowedPages.push("projects");
         if (roleAccessFromDB.auditTrail) allowedPages.push("audit-trail");
         
         // Always include dashboard
@@ -129,6 +131,7 @@ export function Sidebar() {
         if (defaultAccess.expenses[userRole as keyof typeof defaultAccess.expenses]) allowedPages.push("expenses");
         if (defaultAccess.vendors[userRole as keyof typeof defaultAccess.vendors]) allowedPages.push("vendors");
         if (defaultAccess.budgets[userRole as keyof typeof defaultAccess.budgets]) allowedPages.push("budgets");
+        if (defaultAccess.projects[userRole as keyof typeof defaultAccess.projects]) allowedPages.push("projects");
         if (defaultAccess.auditTrail[userRole as keyof typeof defaultAccess.auditTrail]) allowedPages.push("audit-trail");
         
         // Always include dashboard
