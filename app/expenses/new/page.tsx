@@ -228,7 +228,7 @@ export default function NewExpensePage() {
         receiptURL,
         receiptName,
         submittedBy: user.uid,
-        submittedByName: user.fullName,
+        submittedByName: user.fullName ?? user.email ?? "Unknown",
         submittedByEmail: user.email,
         assignedApproverId: effectiveApproverId ?? null,
         assignedApproverName: effectiveApproverName ?? null,
@@ -257,7 +257,9 @@ export default function NewExpensePage() {
       }
 
       showToast("Submitted successfully!", "success");
-      setTimeout(() => router.push("/expenses"), 1500);
+      setSubmitting(false);
+      setUploading(false);
+      router.push("/expenses");
     } catch (err) {
       console.error(err);
       showToast("Failed to submit. Please try again.", "error");
