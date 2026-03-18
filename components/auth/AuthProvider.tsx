@@ -25,6 +25,10 @@ export type AppUser = {
   photoURL?: string;
   assignedApproverId?: string;
   assignedApproverName?: string;
+  tempApproverId?: string;
+  tempApproverName?: string;
+  tempApproverFrom?: string;
+  tempApproverUntil?: string;
   bankName?: string;
   accountNumber?: string;
   ifscCode?: string;
@@ -63,6 +67,10 @@ async function fetchUserProfile(firebaseUser: FirebaseUser): Promise<AppUser> {
     photoURL?: string;
     assignedApproverId?: string;
     assignedApproverName?: string;
+    tempApproverId?: string;
+    tempApproverName?: string;
+    tempApproverFrom?: string;
+    tempApproverUntil?: string;
     bankName?: string;
     accountNumber?: string;
     ifscCode?: string;
@@ -80,6 +88,10 @@ async function fetchUserProfile(firebaseUser: FirebaseUser): Promise<AppUser> {
     photoURL: data.photoURL,
     assignedApproverId: data.assignedApproverId,
     assignedApproverName: data.assignedApproverName,
+    tempApproverId: data.tempApproverId ?? "",
+    tempApproverName: data.tempApproverName ?? "",
+    tempApproverFrom: data.tempApproverFrom ?? "",
+    tempApproverUntil: data.tempApproverUntil ?? "",
     bankName: data.bankName,
     accountNumber: data.accountNumber,
     ifscCode: data.ifscCode,

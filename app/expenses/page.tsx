@@ -1,524 +1,583 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { collection, query, orderBy, onSnapshot, where, doc, updateDoc } from "firebase/firestore";
+import {
+  collection, query, where, orderBy, onSnapshot,
+  doc, updateDoc, serverTimestamp, addDoc
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Search, Filter, Plus, Download, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
+import {
+  Plus, Search, Receipt, Wallet, Eye,
+  CheckCircle, XCircle, IndianRupee, Clock,
+  AlertCircle, Filter
+} from "lucide-react";
 
-// INR currency formatter
-const formatINR = (amount: number) =>
-  new Intl.NumberFormat("en-IN", { 
-    style: "currency", 
-    currency: "INR", 
-    maximumFractionDigits: 0 
-  }).format(amount);
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Expense {
   id: string;
-  employeeName: string;
+  title: string;
+  type: "reimbursement" | "petty_cash_advance";
   category: string;
   amount: number;
   date: string;
-  status: "pending" | "approved" | "rejected";
-  description: string;
-  department: string;
-  receiptUrl?: string;
+  projectId?: string;
+  projectName?: string;
+  department?: string;
+  submittedBy: string;
+  submittedByName: string;
+  assignedApproverId?: string;
+  assignedApproverName?: string;
+  status: "pending_manager" | "pending_finance" | "approved" | "rejected" | "paid";
+  notes?: string;
+  receiptURL?: string;
+  createdAt?: string;
+  approvalHistory?: ApprovalStep[];
 }
 
-export default function ExpensesPage() {
-  const { user } = useAuth();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+interface ApprovalStep {
+  action: string;
+  by: string;
+  byName: string;
+  at: string;
+  note?: string;
+}
 
-  useEffect(() => {
-    if (!user) return;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    setLoading(true);
-    
-    let q = query(collection(db, "expenses"), orderBy("date", "desc"));
-    
-    // Employees can only see their own expenses
-    if (user.role === "employee") {
-      q = query(q, where("employeeId", "==", user.uid));
-    }
+const formatINR = (amount: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency", currency: "INR", maximumFractionDigits: 0
+  }).format(amount ?? 0);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expensesData: Expense[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        expensesData.push({
-          id: doc.id,
-          employeeName: data.employeeName || "Unknown",
-          category: data.category || "Other",
-          amount: data.amount || 0,
-          date: data.date || "",
-          status: data.status || "pending",
-          description: data.description || "",
-          department: data.department || "Unknown",
-          receiptUrl: data.receiptUrl,
-        });
-      });
-      setExpenses(expensesData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching expenses:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const handleStatusUpdate = async (expenseId: string, newStatus: "approved" | "rejected") => {
-    try {
-      await updateDoc(doc(db, "expenses", expenseId), {
-        status: newStatus,
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: user?.fullName,
-      });
-    } catch (error) {
-      console.error("Error updating expense status:", error);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      pending: { backgroundColor: "#fef9c3", color: "#854d0e", border: "1px solid #fde68a" },
-      approved: { backgroundColor: "#dcfce7", color: "#166534", border: "1px solid #bbf7d0" },
-      rejected: { backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" },
-    };
-    
-    const style = styles[status as keyof typeof styles] || styles.pending;
-    
-    return (
-      <span 
-        className="px-3 py-1 rounded-full text-xs font-semibold inline-block"
-        style={style}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const safeDate = (val: any) => {
+const safeDate = (val: unknown) => {
   if (!val) return "—";
   try {
-    const d = val?.toDate ? val.toDate() : new Date(val);
-    return d.toLocaleDateString("en-IN", { 
-      day: "numeric", month: "short", year: "numeric" 
+    const d = (val as { toDate?: () => Date }).toDate
+      ? (val as { toDate: () => Date }).toDate()
+      : new Date(val as string);
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric", month: "short", year: "numeric"
     });
   } catch { return "—"; }
 };
 
-const safeAmount = (val: any) => {
-  if (val === null || val === undefined) return "₹0";
-  const num = typeof val === "number" ? val : Number(val);
-  if (isNaN(num)) return "₹0";
-  return new Intl.NumberFormat("en-IN", { 
-    style: "currency", currency: "INR", maximumFractionDigits: 0 
-  }).format(num);
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  pending_manager: { label: "Pending Manager", bg: "#fef9c3", color: "#854d0e", border: "#fde68a" },
+  pending_finance: { label: "Pending Finance", bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" },
+  approved:        { label: "Approved",         bg: "#dcfce7", color: "#166534", border: "#bbf7d0" },
+  rejected:        { label: "Rejected",          bg: "#fee2e2", color: "#991b1b", border: "#fecaca" },
+  paid:            { label: "Paid",              bg: "#ede9fe", color: "#5b21b6", border: "#ddd6fe" },
 };
 
-const safeStr = (val: any) => {
-  if (!val) return "—";
-  if (typeof val === "string") return val;
-  if (typeof val === "number") return String(val);
-  return "—";
-};
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending_manager;
+  return (
+    <span style={{
+      backgroundColor: cfg.bg, color: cfg.color,
+      border: `1px solid ${cfg.border}`,
+      padding: "3px 10px", borderRadius: 9999,
+      fontSize: 11, fontWeight: 600, whiteSpace: "nowrap"
+    }}>
+      {cfg.label}
+    </span>
+  );
+}
 
-const formatCurrency = (amount: number) => {
-    return formatINR(amount);
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function ExpensesPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [rejectModal, setRejectModal] = useState<{ id: string; name: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || expense.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const role = user?.role ?? "employee";
+  const isManagerOrAbove = role === "admin" || role === "manager" || role === "finance";
+
+  useEffect(() => {
+    if (!user) return;
+
+    let q;
+    if (role === "employee") {
+      q = query(
+        collection(db, "expenses"),
+        where("submittedBy", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+    } else if (role === "manager") {
+      q = query(
+        collection(db, "expenses"),
+        where("assignedApproverId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+    } else {
+      q = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
+    }
+
+    return onSnapshot(q, (snap) => {
+      setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense)));
+      setLoading(false);
+    }, () => setLoading(false));
+  }, [user]);
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  const tabs = [
+    { key: "all", label: "All" },
+    { key: "mine", label: "My Submissions" },
+    ...(isManagerOrAbove ? [{ key: "pending", label: "Pending Approval" }] : []),
+    { key: "approved", label: "Approved" },
+    { key: "rejected", label: "Rejected" },
+  ];
+
+  const filtered = expenses.filter(e => {
+    if (activeTab === "mine" && e.submittedBy !== user?.uid) return false;
+    if (activeTab === "pending" && !["pending_manager", "pending_finance"].includes(e.status)) return false;
+    if (activeTab === "approved" && e.status !== "approved") return false;
+    if (activeTab === "rejected" && e.status !== "rejected") return false;
+    if (typeFilter !== "all" && e.type !== typeFilter) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (!e.title?.toLowerCase().includes(s) && !e.submittedByName?.toLowerCase().includes(s)) return false;
+    }
+    return true;
   });
 
-  const canApproveReject = user?.role === "admin" || user?.role === "finance" || user?.role === "manager";
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  const handleApprove = async (expense: Expense) => {
+    if (!user) return;
+    setActionLoading(expense.id);
+    try {
+      const isManager = role === "manager" || (role === "admin" && expense.status === "pending_manager");
+      const newStatus = isManager ? "pending_finance" : "paid";
+
+      await updateDoc(doc(db, "expenses", expense.id), {
+        status: newStatus,
+        updatedAt: serverTimestamp(),
+        approvalHistory: [
+          ...(expense.approvalHistory ?? []),
+          { action: "approved", by: user.uid, byName: user.fullName, at: new Date().toISOString() }
+        ]
+      });
+
+      // Notify next in chain
+      if (isManager) {
+        // Notify all finance users
+        await addDoc(collection(db, "notifications"), {
+          userId: expense.submittedBy,
+          title: "Expense Approved by Manager",
+          message: `₹${expense.amount} for ${expense.category} approved. Pending finance.`,
+          type: "approval", read: false, createdAt: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, "notifications"), {
+          userId: expense.submittedBy,
+          title: "Expense Paid",
+          message: `Your expense of ₹${expense.amount} for ${expense.category} has been paid.`,
+          type: "approval", read: false, createdAt: serverTimestamp()
+        });
+      }
+      showToast("Expense approved successfully!", "success");
+    } catch {
+      showToast("Failed to approve expense.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!user || !rejectModal) return;
+    setActionLoading(rejectModal.id);
+    try {
+      const expense = expenses.find(e => e.id === rejectModal.id);
+      await updateDoc(doc(db, "expenses", rejectModal.id), {
+        status: "rejected",
+        updatedAt: serverTimestamp(),
+        approvalHistory: [
+          ...(expense?.approvalHistory ?? []),
+          { action: "rejected", by: user.uid, byName: user.fullName,
+            at: new Date().toISOString(), note: rejectReason }
+        ]
+      });
+      await addDoc(collection(db, "notifications"), {
+        userId: expense?.submittedBy,
+        title: "Expense Rejected",
+        message: `Your expense for ${expense?.category} was rejected. Reason: ${rejectReason}`,
+        type: "rejection", read: false, createdAt: serverTimestamp()
+      });
+      setRejectModal(null);
+      setRejectReason("");
+      showToast("Expense rejected.", "success");
+    } catch {
+      showToast("Failed to reject expense.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleMarkPaid = async (expense: Expense) => {
+    if (!user) return;
+    setActionLoading(expense.id);
+    try {
+      await updateDoc(doc(db, "expenses", expense.id), {
+        status: "paid",
+        updatedAt: serverTimestamp(),
+        approvalHistory: [
+          ...(expense.approvalHistory ?? []),
+          { action: "paid", by: user.uid, byName: user.fullName, at: new Date().toISOString() }
+        ]
+      });
+      await addDoc(collection(db, "notifications"), {
+        userId: expense.submittedBy,
+        title: "Expense Paid",
+        message: `Your expense of ₹${expense.amount} has been paid.`,
+        type: "approval", read: false, createdAt: serverTimestamp()
+      });
+      showToast("Marked as paid!", "success");
+    } catch {
+      showToast("Failed to mark as paid.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const canApprove = (expense: Expense) => {
+    if (expense.status === "pending_manager" &&
+      (expense.assignedApproverId === user?.uid || role === "admin")) return true;
+    if (expense.status === "pending_finance" && (role === "finance" || role === "admin")) return true;
+    return false;
+  };
+
+  const canMarkPaid = (expense: Expense) =>
+    expense.status === "approved" && (role === "finance" || role === "admin");
 
   if (loading) {
     return (
-      <main style={{ padding: "24px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ height: "32px", backgroundColor: "#f3f4f6", borderRadius: "4px", width: "200px" }}></div>
-            <div style={{ height: "40px", backgroundColor: "#f3f4f6", borderRadius: "8px", width: "120px" }}></div>
-          </div>
-          <div 
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              padding: "20px"
-            }}
-          >
-            <div className="animate-pulse">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} style={{ height: "60px", backgroundColor: "#f3f4f6", borderRadius: "4px", marginBottom: "12px" }}></div>
-              ))}
-            </div>
-          </div>
+      <main style={{ padding: 24 }}>
+        <div style={{ display: "grid", gap: 12 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ height: 60, backgroundColor: "#f3f4f6", borderRadius: 12 }} />
+          ))}
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ padding: "24px" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h1 style={{ fontSize: "24px", fontWeight: "700", color: "#111827", margin: "0 0 8px 0" }}>Expenses</h1>
-            <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
-              Manage and track all expense submissions
-            </p>
-          </div>
+    <main style={{ padding: 24 }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: "0 0 4px 0" }}>
+            Expenses & Petty Cash
+          </h1>
+          <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+            {filtered.length} record{filtered.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <button
+          onClick={() => router.push("/expenses/new")}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 18px", backgroundColor: "#10b981",
+            color: "white", border: "none", borderRadius: 10,
+            fontSize: 14, fontWeight: 600, cursor: "pointer"
+          }}
+        >
+          <Plus size={16} />
+          New Submission
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid #e2e8f0", paddingBottom: 0 }}>
+        {tabs.map(tab => (
           <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             style={{
-              backgroundColor: "#10b981",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
+              padding: "10px 16px", border: "none", cursor: "pointer",
+              backgroundColor: "transparent", fontSize: 13, fontWeight: 500,
+              color: activeTab === tab.key ? "#10b981" : "#64748b",
+              borderBottom: activeTab === tab.key ? "2px solid #10b981" : "2px solid transparent",
+              marginBottom: -1, transition: "all 0.15s"
             }}
           >
-            <Plus size={16} />
-            New Expense
+            {tab.label}
+            <span style={{
+              marginLeft: 6, padding: "1px 7px",
+              backgroundColor: activeTab === tab.key ? "#d1fae5" : "#f1f5f9",
+              color: activeTab === tab.key ? "#065f46" : "#94a3b8",
+              borderRadius: 9999, fontSize: 11, fontWeight: 600
+            }}>
+              {expenses.filter(e => {
+                if (tab.key === "all") return true;
+                if (tab.key === "mine") return e.submittedBy === user?.uid;
+                if (tab.key === "pending") return ["pending_manager", "pending_finance"].includes(e.status);
+                if (tab.key === "approved") return e.status === "approved";
+                if (tab.key === "rejected") return e.status === "rejected";
+                return true;
+              }).length}
+            </span>
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Filters */}
-        <div 
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+        <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
+          <Search size={15} style={{ position: "absolute", left: 12, top: 11, color: "#94a3b8" }} />
+          <input
+            type="text"
+            placeholder="Search by title or person..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 12px 10px 36px",
+              border: "1px solid #e2e8f0", borderRadius: 8,
+              fontSize: 13, outline: "none", boxSizing: "border-box"
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+            onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+          />
+        </div>
+        <select
+          value={typeFilter}
+          onChange={e => setTypeFilter(e.target.value)}
           style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            padding: "20px"
+            padding: "10px 12px", border: "1px solid #e2e8f0",
+            borderRadius: 8, fontSize: 13, backgroundColor: "white",
+            outline: "none", cursor: "pointer"
           }}
         >
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: "200px" }}>
-              <Search size={20} style={{ color: "#6b7280" }} />
-              <input
-                type="text"
-                placeholder="Search expenses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  padding: "8px 12px",
-                  fontSize: "14px",
-                  width: "100%",
-                  outline: "none"
-                }}
-              />
-            </div>
-            
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Filter size={20} style={{ color: "#6b7280" }} />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  padding: "8px 12px",
-                  fontSize: "14px",
-                  outline: "none"
-                }}
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
+          <option value="all">All Types</option>
+          <option value="reimbursement">Expense Reimbursement</option>
+          <option value="petty_cash_advance">Petty Cash Advance</option>
+        </select>
+      </div>
 
+      {/* Table */}
+      {filtered.length === 0 ? (
+        <div style={{
+          textAlign: "center", padding: 60,
+          backgroundColor: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: 16
+        }}>
+          <Receipt size={48} color="#cbd5e1" style={{ marginBottom: 16 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", margin: "0 0 8px 0" }}>
+            No expenses found
+          </h3>
+          <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px 0" }}>
+            {role === "employee"
+              ? "Submit your first expense to get started."
+              : "No expenses match your current filters."}
+          </p>
+          {role !== "finance" && (
             <button
+              onClick={() => router.push("/expenses/new")}
               style={{
-                backgroundColor: "#f3f4f6",
-                color: "#374151",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                padding: "8px 16px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px"
+                padding: "10px 20px", backgroundColor: "#10b981",
+                color: "white", border: "none", borderRadius: 8,
+                fontSize: 14, fontWeight: 600, cursor: "pointer"
               }}
             >
-              <Download size={16} />
-              Export
+              New Submission
             </button>
-          </div>
+          )}
         </div>
-
-        {/* Expenses Table */}
-        <div 
-          style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            overflow: "hidden"
-          }}
-        >
+      ) : (
+        <div style={{
+          backgroundColor: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: 16, overflow: "hidden"
+        }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ backgroundColor: "#f9fafb" }}>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Employee
-                  </th>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Category
-                  </th>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Amount
-                  </th>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Date
-                  </th>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Status
-                  </th>
-                  {canApproveReject && (
-                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "500", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Actions
+                <tr style={{ backgroundColor: "#f8fafc" }}>
+                  {["Title", "Type", "Category", "Amount", "Project", "Submitted By", "Date", "Status", "Actions"].map(h => (
+                    <th key={h} style={{
+                      padding: "10px 16px", textAlign: "left",
+                      fontSize: 11, fontWeight: 600, color: "#64748b",
+                      textTransform: "uppercase", letterSpacing: "0.05em",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {h}
                     </th>
-                  )}
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredExpenses.map((expense, index) => (
-                  <tr 
-                    key={expense.id} 
-                    style={{ 
-                      borderBottom: "1px solid #f3f4f6",
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#fafafa",
-                      transition: "background-color 0.2s ease"
+                {filtered.map((expense, i) => (
+                  <tr
+                    key={expense.id}
+                    style={{
+                      borderTop: "1px solid #f1f5f9",
+                      backgroundColor: i % 2 === 0 ? "#fff" : "#fafafa",
+                      transition: "background 0.1s"
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f9fafb";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#fafafa";
-                    }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f0fdf4")}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fff" : "#fafafa")}
                   >
-                    <td style={{ padding: "16px", verticalAlign: "middle" }}>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <div style={{ fontSize: "14px", fontWeight: "500", color: "#111827", marginBottom: "2px" }}>
-                          {safeStr(expense.employeeName)}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {safeStr(expense.department)}
-                        </div>
-                      </div>
+                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 500, color: "#0f172a", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {expense.title ?? "—"}
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {safeStr(expense.category)}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#64748b" }}>
+                        {expense.type === "petty_cash_advance"
+                          ? <><Wallet size={12} /> Petty Cash</>
+                          : <><Receipt size={12} /> Expense</>
+                        }
+                      </span>
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", fontWeight: "500", color: "#111827", verticalAlign: "top" }}>
-                      {safeAmount(expense.amount)}
+                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#374151" }}>
+                      {expense.category ?? "—"}
                     </td>
-                    <td style={{ padding: "16px", fontSize: "14px", color: "#374151", verticalAlign: "top" }}>
+                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap" }}>
+                      {formatINR(expense.amount)}
+                    </td>
+                    <td style={{ padding: "14px 16px", fontSize: 12, color: "#64748b" }}>
+                      {expense.projectName ?? "General"}
+                    </td>
+                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#374151" }}>
+                      {expense.submittedByName ?? "—"}
+                    </td>
+                    <td style={{ padding: "14px 16px", fontSize: 12, color: "#64748b", whiteSpace: "nowrap" }}>
                       {safeDate(expense.date)}
                     </td>
-                    <td style={{ padding: "16px", verticalAlign: "top" }}>
-                      {getStatusBadge(expense.status)}
+                    <td style={{ padding: "14px 16px" }}>
+                      <StatusBadge status={expense.status} />
                     </td>
-                    {canApproveReject && (
-                      <td style={{ padding: "16px", verticalAlign: "top" }}>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          {expense.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => handleStatusUpdate(expense.id, "approved")}
-                                style={{
-                                  backgroundColor: "#dcfce7",
-                                  color: "#166534",
-                                  border: "1px solid #bbf7d0",
-                                  borderRadius: "6px",
-                                  padding: "6px 12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px"
-                                }}
-                              >
-                                <CheckCircle size={14} />
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(expense.id, "rejected")}
-                                style={{
-                                  backgroundColor: "#fee2e2",
-                                  color: "#991b1b",
-                                  border: "1px solid #fecaca",
-                                  borderRadius: "6px",
-                                  padding: "6px 12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px"
-                                }}
-                              >
-                                <XCircle size={14} />
-                                Reject
-                              </button>
-                            </>
-                          )}
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {/* View */}
+                        <button
+                          onClick={() => router.push(`/expenses/${expense.id}`)}
+                          style={{ padding: 6, backgroundColor: "#f1f5f9", border: "none", borderRadius: 6, cursor: "pointer" }}
+                          title="View"
+                        >
+                          <Eye size={14} color="#64748b" />
+                        </button>
+
+                        {/* Approve */}
+                        {canApprove(expense) && (
                           <button
-                            onClick={() => setSelectedExpense(expense)}
-                            style={{
-                              backgroundColor: "#f3f4f6",
-                              color: "#374151",
-                              border: "1px solid #e5e7eb",
-                              borderRadius: "6px",
-                              padding: "6px 12px",
-                              fontSize: "12px",
-                              fontWeight: "500",
-                              cursor: "pointer",
-                              display: "flex",
-                                  alignItems: "center",
-                              gap: "4px"
-                            }}
+                            onClick={() => handleApprove(expense)}
+                            disabled={actionLoading === expense.id}
+                            style={{ padding: 6, backgroundColor: "#dcfce7", border: "none", borderRadius: 6, cursor: "pointer" }}
+                            title="Approve"
                           >
-                            <Eye size={14} />
-                            View
+                            <CheckCircle size={14} color="#16a34a" />
                           </button>
-                        </div>
-                      </td>
-                    )}
+                        )}
+
+                        {/* Reject */}
+                        {canApprove(expense) && (
+                          <button
+                            onClick={() => setRejectModal({ id: expense.id, name: expense.title })}
+                            style={{ padding: 6, backgroundColor: "#fee2e2", border: "none", borderRadius: 6, cursor: "pointer" }}
+                            title="Reject"
+                          >
+                            <XCircle size={14} color="#dc2626" />
+                          </button>
+                        )}
+
+                        {/* Mark Paid */}
+                        {canMarkPaid(expense) && (
+                          <button
+                            onClick={() => handleMarkPaid(expense)}
+                            disabled={actionLoading === expense.id}
+                            style={{ padding: "6px 10px", backgroundColor: "#ede9fe", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#5b21b6" }}
+                            title="Mark as Paid"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
 
-        {/* Expense Detail Modal */}
-        {selectedExpense && (
-          <div 
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000
-            }}
-            onClick={() => setSelectedExpense(null)}
-          >
-            <div 
+      {/* Reject Modal */}
+      {rejectModal && (
+        <div style={{
+          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{ backgroundColor: "#fff", borderRadius: 14, padding: 24, width: 420, maxWidth: "90%" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", margin: "0 0 8px 0" }}>
+              Reject Expense
+            </h3>
+            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 16px 0" }}>
+              &ldquo;{rejectModal.name}&rdquo;
+            </p>
+            <textarea
+              placeholder="Reason for rejection (required)"
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              rows={3}
               style={{
-                backgroundColor: "#ffffff",
-                borderRadius: "12px",
-                boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-                maxWidth: "500px",
-                width: "90%",
-                maxHeight: "90vh",
-                overflow: "auto"
+                width: "100%", padding: 10, border: "1px solid #e2e8f0",
+                borderRadius: 8, fontSize: 13, resize: "vertical",
+                outline: "none", boxSizing: "border-box", marginBottom: 16
               }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ padding: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#1f2937", margin: 0 }}>
-                    Expense Details
-                  </h2>
-                  <button
-                    onClick={() => setSelectedExpense(null)}
-                    style={{
-                      backgroundColor: "transparent",
-                      border: "none",
-                      fontSize: "20px",
-                      cursor: "pointer",
-                      color: "#6b7280"
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Employee</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.employeeName)}</p>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Department</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.department)}</p>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Category</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>{safeStr(selectedExpense.category)}</p>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Amount</label>
-                    <p style={{ fontSize: "18px", fontWeight: "600", color: "#111827", margin: 0 }}>
-                      {safeAmount(selectedExpense.amount)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Date</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0 }}>
-                      {safeDate(selectedExpense.date)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Status</label>
-                    <div style={{ marginTop: "4px" }}>
-                      {getStatusBadge(selectedExpense.status)}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", display: "block" }}>Description</label>
-                    <p style={{ fontSize: "14px", color: "#111827", margin: 0, lineHeight: "1.5" }}>
-                      {safeStr(selectedExpense.description)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                onClick={() => { setRejectModal(null); setRejectReason(""); }}
+                style={{ padding: "8px 16px", backgroundColor: "#f1f5f9", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={!rejectReason.trim() || actionLoading === rejectModal.id}
+                style={{ padding: "8px 16px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Reject
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 999,
+          backgroundColor: toast.type === "success" ? "#dcfce7" : "#fee2e2",
+          color: toast.type === "success" ? "#166534" : "#991b1b",
+          border: `1px solid ${toast.type === "success" ? "#bbf7d0" : "#fecaca"}`,
+          borderRadius: 10, padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 8,
+          fontSize: 14, fontWeight: 500, boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+        }}>
+          {toast.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+          {toast.message}
+        </div>
+      )}
     </main>
   );
 }
