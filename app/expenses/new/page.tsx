@@ -366,21 +366,6 @@ export default function NewExpensePage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               {
-                value: "reimbursement" as const,
-                icon: <Receipt size={22} />,
-                label: "Expense Reimbursement",
-                desc: "I paid from my own pocket"
-              },
-              {
-                value: "petty_cash_advance" as const,
-                icon: <Wallet size={22} />,
-                label: "Petty Cash Advance",
-                desc: "I need cash upfront before spending"
-              }
-            ].map(opt => (
-              <button
-                key={opt.value}
-                type="button"
                 onClick={() => setType(opt.value)}
                 style={{
                   padding: 16, borderRadius: 12, cursor: "pointer", textAlign: "left",
