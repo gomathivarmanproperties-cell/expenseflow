@@ -95,17 +95,22 @@ export default function UsersPage() {
   useEffect(() => {
     if (!user || user.role !== "admin") return;
 
-    const q = query(collection(db, "users"), orderBy("fullName"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const usersData: User[] = [];
-      snapshot.forEach((doc) => {
-        usersData.push({ id: doc.id, ...doc.data() } as User);
+    try {
+      const q = query(collection(db, "users"), orderBy("fullName"));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const usersData: User[] = [];
+        snapshot.forEach((doc) => {
+          usersData.push({ id: doc.id, ...doc.data() } as User);
+        });
+        setUsers(usersData);
+        setLoading(false);
       });
-      setUsers(usersData);
-      setLoading(false);
-    });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error loading users:", error);
+      setLoading(false);
+    }
   }, [user]);
 
   // Get managers and admins for approver dropdown
@@ -113,20 +118,22 @@ export default function UsersPage() {
   useEffect(() => {
     if (!user || user.role !== "admin") return;
 
-    const q = query(
-      collection(db, "users"), 
-      where("role", "in", ["manager", "admin"]),
-      where("status", "==", "active")
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const approversData: User[] = [];
-      snapshot.forEach((doc) => {
-        approversData.push({ id: doc.id, ...doc.data() } as User);
+    try {
+      const q = query(
+        collection(db, "users"),
+        where("role", "in", ["manager", "admin"])
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const approversData = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as User))
+          .filter(u => u.status !== "inactive");
+        setApprovers(approversData);
       });
-      setApprovers(approversData);
-    });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error loading approvers:", error);
+    }
   }, [user]);
 
   // Filter users
