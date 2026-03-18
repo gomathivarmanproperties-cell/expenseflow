@@ -22,7 +22,7 @@ import {
 const navigationItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Expenses", href: "/expenses", icon: Receipt },
-  { name: "Expense Reports", href: "/expense-reports", icon: FileBarChart },
+  { name: "Expense Reports", href: "/expense-reports", icon: FileBarChart, key: "expense-reports" },
   { name: "Vendors", href: "/vendors", icon: Users },
   { name: "Budgets", href: "/budgets", icon: IndianRupee },
   { name: "Projects", href: "/projects", icon: FolderOpen, roles: ["admin", "manager", "finance"] },
@@ -95,7 +95,7 @@ export function Sidebar() {
     
     // Admin always sees everything, skip Firestore module config
     if (userRole === "admin") {
-      setModuleAccess(["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail", "users", "settings"]);
+      setModuleAccess(["dashboard", "expenses", "expense-reports", "vendors", "budgets", "projects", "audit-trail", "users", "settings"]);
       return;
     }
 
@@ -107,6 +107,7 @@ export function Sidebar() {
         // Convert Firestore data to role access format
         const roleAccessFromDB = {
           expenses: accessData.expenses?.[userRole] || defaultModuleAccess.expenses[userRole as keyof typeof defaultModuleAccess.expenses],
+          "expense-reports": accessData["expense-reports"]?.[userRole] || defaultModuleAccess["expense-reports"][userRole as keyof typeof defaultModuleAccess["expense-reports"]],
           vendors: accessData.vendors?.[userRole] || defaultModuleAccess.vendors[userRole as keyof typeof defaultModuleAccess.vendors],
           budgets: accessData.budgets?.[userRole] || defaultModuleAccess.budgets[userRole as keyof typeof defaultModuleAccess.budgets],
           projects: accessData.projects?.[userRole] || defaultModuleAccess.projects[userRole as keyof typeof defaultModuleAccess.projects],
@@ -116,6 +117,7 @@ export function Sidebar() {
         // Build allowed pages array based on module access
         const allowedPages = [];
         if (roleAccessFromDB.expenses) allowedPages.push("expenses");
+        if (roleAccessFromDB["expense-reports"]) allowedPages.push("expense-reports");
         if (roleAccessFromDB.vendors) allowedPages.push("vendors");
         if (roleAccessFromDB.budgets) allowedPages.push("budgets");
         if (roleAccessFromDB.projects) allowedPages.push("projects");
@@ -132,6 +134,7 @@ export function Sidebar() {
         
         const allowedPages = [];
         if (defaultAccess.expenses[userRole as keyof typeof defaultAccess.expenses]) allowedPages.push("expenses");
+        if (defaultAccess["expense-reports"][userRole as keyof typeof defaultAccess["expense-reports"]]) allowedPages.push("expense-reports");
         if (defaultAccess.vendors[userRole as keyof typeof defaultAccess.vendors]) allowedPages.push("vendors");
         if (defaultAccess.budgets[userRole as keyof typeof defaultAccess.budgets]) allowedPages.push("budgets");
         if (defaultAccess.projects[userRole as keyof typeof defaultAccess.projects]) allowedPages.push("projects");
