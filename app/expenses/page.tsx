@@ -1,105 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
-  collection, query, where, orderBy, onSnapshot,
-  doc, updateDoc, serverTimestamp, addDoc
+  collection, query, where, getDocs, addDoc,
+  serverTimestamp, doc, getDoc
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import {
-  Plus, Search, Receipt, Wallet, Eye,
-  CheckCircle, XCircle, IndianRupee, Clock,
-  AlertCircle, Filter
+  Receipt, Wallet, Upload, X, AlertCircle,
+  CheckCircle, ArrowLeft, Plus, Trash2
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Expense {
+interface Project {
   id: string;
-  title: string;
-  type: "reimbursement" | "petty_cash_advance";
-  category: string;
-  amount: number;
-  date: string;
-  projectId?: string;
-  projectName?: string;
-  department?: string;
-  submittedBy: string;
-  submittedByName: string;
-  assignedApproverId?: string;
-  assignedApproverName?: string;
-  status: "pending_manager" | "pending_finance" | "approved" | "rejected" | "paid";
-  notes?: string;
-  receiptURL?: string;
-  createdAt?: string;
-  approvalHistory?: ApprovalStep[];
+  name: string;
+  code: string;
+  status: string;
 }
 
-interface ApprovalStep {
-  action: string;
-  by: string;
-  byName: string;
-  at: string;
-  note?: string;
+interface TeamMember {
+  userId: string;
+  name: string;
+  amount: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const formatINR = (amount: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency", currency: "INR", maximumFractionDigits: 0
-  }).format(amount ?? 0);
-
-const safeDate = (val: unknown) => {
-  if (!val) return "—";
-  try {
-    const d = (val as { toDate?: () => Date }).toDate
-      ? (val as { toDate: () => Date }).toDate()
-      : new Date(val as string);
-    return d.toLocaleDateString("en-IN", {
-      day: "numeric", month: "short", year: "numeric"
-    });
-  } catch { return "—"; }
-};
-
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
-  pending_manager: { label: "Pending Manager", bg: "#fef9c3", color: "#854d0e", border: "#fde68a" },
-  pending_finance: { label: "Pending Finance", bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" },
-  approved:        { label: "Approved",         bg: "#dcfce7", color: "#166534", border: "#bbf7d0" },
-  rejected:        { label: "Rejected",          bg: "#fee2e2", color: "#991b1b", border: "#fecaca" },
-  paid:            { label: "Paid",              bg: "#ede9fe", color: "#5b21b6", border: "#ddd6fe" },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending_manager;
+function Field({
+  label, required, children
+}: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <span style={{
-      backgroundColor: cfg.bg, color: cfg.color,
-      border: `1px solid ${cfg.border}`,
-      padding: "3px 10px", borderRadius: 9999,
-      fontSize: 11, fontWeight: 600, whiteSpace: "nowrap"
-    }}>
-      {cfg.label}
-    </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{
+        fontSize: 12, fontWeight: 600, color: "#64748b",
+        textTransform: "uppercase", letterSpacing: "0.05em"
+      }}>
+        {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
+      </label>
+      {children}
+    </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+const inputStyle: React.CSSProperties = {
+  padding: "10px 12px", border: "1px solid #e2e8f0",
+  borderRadius: 8, fontSize: 14, color: "#0f172a",
+  backgroundColor: "#fff", outline: "none", width: "100%",
+  boxSizing: "border-box"
+};
 
-export default function ExpensesPage() {
+// ─── Main Form ────────────────────────────────────────────────────────────────
+
+export default function NewExpensePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [rejectModal, setRejectModal] = useState<{ id: string; name: string } | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Form state
+  const [type, setType] = useState<"reimbursement" | "petty_cash_advance">("reimbursement");
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [projectId, setProjectId] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [department, setDepartment] = useState(user?.department ?? "");
+  const [notes, setNotes] = useState("");
+  const [paidTo, setPaidTo] = useState("");
+  const [expectedUseDate, setExpectedUseDate] = useState("");
+  const [expectedReturnDate, setExpectedReturnDate] = useState("");
+  const [isForTeam, setIsForTeam] = useState(false);
+  const [teamDistribution, setTeamDistribution] = useState<TeamMember[]>([]);
+
+  // Data
+  const [categories, setCategories] = useState<string[]>([
+    "Travel", "Food", "Accommodation", "Office Supplies",
+    "Medical", "Entertainment", "Training", "Petrol", "Other"
+  ]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  // File upload
+  const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+
+  // UI state
+  const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const showToast = (message: string, type: "success" | "error") => {
@@ -107,452 +99,596 @@ export default function ExpensesPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const role = user?.role ?? "employee";
-  const isManagerOrAbove = role === "admin" || role === "manager" || role === "finance";
+  // Check approver
+  const hasApprover = !!(user?.assignedApproverId || user?.tempApproverId);
+  const today = new Date();
+  const tempValid = user?.tempApproverId && user?.tempApproverFrom && user?.tempApproverUntil &&
+    today >= new Date(user.tempApproverFrom) && today <= new Date(user.tempApproverUntil);
+  const effectiveApproverId = tempValid ? user?.tempApproverId : user?.assignedApproverId;
+  const effectiveApproverName = tempValid ? user?.tempApproverName : user?.assignedApproverName;
 
+  // Load categories
   useEffect(() => {
-    if (!user) return;
+    const loadCategories = async () => {
+      try {
+        const snap = await getDoc(doc(db, "appConfig", "expenseCategories"));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.categories?.length) setCategories(data.categories);
+        }
+      } catch { /* use defaults */ }
+    };
+    loadCategories();
+  }, []);
 
-    const constraints = role === "employee"
-      ? [where("submittedBy", "==", user.uid), orderBy("createdAt", "desc")]
-      : role === "manager"
-      ? [where("assignedApproverId", "==", user.uid), orderBy("createdAt", "desc")]
-      : [orderBy("createdAt", "desc")];
+  // Load projects
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const q = query(collection(db, "projects"), where("status", "==", "Active"));
+        const snap = await getDocs(q);
+        setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
+      } catch { /* ignore */ }
+    };
+    loadProjects();
+  }, []);
 
-    const q = query(collection(db, "expenses"), ...constraints);
-
-    return onSnapshot(q, (snap) => {
-      setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense)));
-      setLoading(false);
-    }, () => setLoading(false));
-  }, [user]);
-
-  // ── Tabs ──────────────────────────────────────────────────────────────────
-
-  const tabs = [
-    { key: "all", label: "All" },
-    { key: "mine", label: "My Submissions" },
-    ...(isManagerOrAbove ? [{ key: "pending", label: "Pending Approval" }] : []),
-    { key: "approved", label: "Approved" },
-    { key: "rejected", label: "Rejected" },
-  ];
-
-  const filtered = expenses.filter(e => {
-    if (activeTab === "mine" && e.submittedBy !== user?.uid) return false;
-    if (activeTab === "pending" && !["pending_manager", "pending_finance"].includes(e.status)) return false;
-    if (activeTab === "approved" && e.status !== "approved") return false;
-    if (activeTab === "rejected" && e.status !== "rejected") return false;
-    if (typeFilter !== "all" && e.type !== typeFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (!e.title?.toLowerCase().includes(s) && !e.submittedByName?.toLowerCase().includes(s)) return false;
+  // File handling
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    if (f.type.startsWith("image/")) {
+      setFilePreview(URL.createObjectURL(f));
+    } else {
+      setFilePreview(null);
     }
-    return true;
-  });
+  };
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  const handleRemoveFile = () => {
+    setFile(null);
+    setFilePreview(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-  const handleApprove = async (expense: Expense) => {
+  // Team distribution
+  const addTeamMember = () => {
+    setTeamDistribution(prev => [...prev, { userId: "", name: "", amount: "" }]);
+  };
+
+  const removeTeamMember = (index: number) => {
+    setTeamDistribution(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateTeamMember = (index: number, field: keyof TeamMember, value: string) => {
+    setTeamDistribution(prev => prev.map((m, i) => i === index ? { ...m, [field]: value } : m));
+  };
+
+  const teamTotal = teamDistribution.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
+  const amountNum = parseFloat(amount) || 0;
+  const teamMismatch = isForTeam && teamDistribution.length > 0 && Math.abs(teamTotal - amountNum) > 0.01;
+
+  // Submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
-    setActionLoading(expense.id);
+
+    if (!hasApprover) {
+      showToast("No approver assigned. Contact Admin.", "error");
+      return;
+    }
+
+    if (!title || !category || !amount || !date) {
+      showToast("Please fill in all required fields.", "error");
+      return;
+    }
+
+    if (teamMismatch) {
+      showToast("Team distribution total must equal the requested amount.", "error");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const isManager = role === "manager" || (role === "admin" && expense.status === "pending_manager");
-      const newStatus = isManager ? "pending_finance" : "paid";
+      let receiptURL = null;
+      let receiptName = null;
 
-      await updateDoc(doc(db, "expenses", expense.id), {
-        status: newStatus,
-        updatedAt: serverTimestamp(),
-        approvalHistory: [
-          ...(expense.approvalHistory ?? []),
-          { action: "approved", by: user.uid, byName: user.fullName, at: new Date().toISOString() }
-        ]
-      });
-
-      // Notify next in chain
-      if (isManager) {
-        // Notify all finance users
-        await addDoc(collection(db, "notifications"), {
-          userId: expense.submittedBy,
-          title: "Expense Approved by Manager",
-          message: `₹${expense.amount} for ${expense.category} approved. Pending finance.`,
-          type: "approval", read: false, createdAt: serverTimestamp()
+      // Upload file if provided
+      if (file) {
+        setUploading(true);
+        const storageRef = ref(storage, `receipts/${user.uid}/${Date.now()}_${file.name}`);
+        await new Promise<void>((resolve, reject) => {
+          const task = uploadBytesResumable(storageRef, file);
+          task.on("state_changed",
+            snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+            reject,
+            async () => {
+              receiptURL = await getDownloadURL(task.snapshot.ref);
+              receiptName = file.name;
+              resolve();
+            }
+          );
         });
-      } else {
+        setUploading(false);
+      }
+
+      // Save expense
+      const expenseData = {
+        title,
+        type,
+        category,
+        amount: parseFloat(amount),
+        date,
+        projectId: projectId || null,
+        projectName: projectName || null,
+        department,
+        paidTo: paidTo || null,
+        notes: notes || null,
+        receiptURL,
+        receiptName,
+        submittedBy: user.uid,
+        submittedByName: user.fullName,
+        submittedByEmail: user.email,
+        assignedApproverId: effectiveApproverId ?? null,
+        assignedApproverName: effectiveApproverName ?? null,
+        status: "pending_manager",
+        expectedUseDate: expectedUseDate || null,
+        expectedReturnDate: expectedReturnDate || null,
+        isForTeam,
+        teamDistribution: isForTeam ? teamDistribution : [],
+        approvalHistory: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, "expenses"), expenseData);
+
+      // Notify approver
+      if (effectiveApproverId) {
         await addDoc(collection(db, "notifications"), {
-          userId: expense.submittedBy,
-          title: "Expense Paid",
-          message: `Your expense of ₹${expense.amount} for ${expense.category} has been paid.`,
-          type: "approval", read: false, createdAt: serverTimestamp()
+          userId: effectiveApproverId,
+          title: "New Expense Submitted",
+          message: `${user.fullName} submitted ₹${amount} for ${category}`,
+          type: "info",
+          read: false,
+          createdAt: serverTimestamp()
         });
       }
-      showToast("Expense approved successfully!", "success");
-    } catch {
-      showToast("Failed to approve expense.", "error");
-    } finally {
-      setActionLoading(null);
+
+      showToast("Submitted successfully!", "success");
+      setTimeout(() => router.push("/expenses"), 1500);
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to submit. Please try again.", "error");
+      setSubmitting(false);
+      setUploading(false);
     }
   };
-
-  const handleReject = async () => {
-    if (!user || !rejectModal) return;
-    setActionLoading(rejectModal.id);
-    try {
-      const expense = expenses.find(e => e.id === rejectModal.id);
-      await updateDoc(doc(db, "expenses", rejectModal.id), {
-        status: "rejected",
-        updatedAt: serverTimestamp(),
-        approvalHistory: [
-          ...(expense?.approvalHistory ?? []),
-          { action: "rejected", by: user.uid, byName: user.fullName,
-            at: new Date().toISOString(), note: rejectReason }
-        ]
-      });
-      await addDoc(collection(db, "notifications"), {
-        userId: expense?.submittedBy,
-        title: "Expense Rejected",
-        message: `Your expense for ${expense?.category} was rejected. Reason: ${rejectReason}`,
-        type: "rejection", read: false, createdAt: serverTimestamp()
-      });
-      setRejectModal(null);
-      setRejectReason("");
-      showToast("Expense rejected.", "success");
-    } catch {
-      showToast("Failed to reject expense.", "error");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleMarkPaid = async (expense: Expense) => {
-    if (!user) return;
-    setActionLoading(expense.id);
-    try {
-      await updateDoc(doc(db, "expenses", expense.id), {
-        status: "paid",
-        updatedAt: serverTimestamp(),
-        approvalHistory: [
-          ...(expense.approvalHistory ?? []),
-          { action: "paid", by: user.uid, byName: user.fullName, at: new Date().toISOString() }
-        ]
-      });
-      await addDoc(collection(db, "notifications"), {
-        userId: expense.submittedBy,
-        title: "Expense Paid",
-        message: `Your expense of ₹${expense.amount} has been paid.`,
-        type: "approval", read: false, createdAt: serverTimestamp()
-      });
-      showToast("Marked as paid!", "success");
-    } catch {
-      showToast("Failed to mark as paid.", "error");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const canApprove = (expense: Expense) => {
-    if (expense.status === "pending_manager" &&
-      (expense.assignedApproverId === user?.uid || role === "admin")) return true;
-    if (expense.status === "pending_finance" && (role === "finance" || role === "admin")) return true;
-    return false;
-  };
-
-  const canMarkPaid = (expense: Expense) =>
-    expense.status === "approved" && (role === "finance" || role === "admin");
-
-  if (loading) {
-    return (
-      <main style={{ padding: 24 }}>
-        <div style={{ display: "grid", gap: 12 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: 60, backgroundColor: "#f3f4f6", borderRadius: 12 }} />
-          ))}
-        </div>
-      </main>
-    );
-  }
 
   return (
-    <main style={{ padding: 24 }}>
+    <main style={{ padding: 24, maxWidth: 820, margin: "0 auto" }}>
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: "0 0 4px 0" }}>
-            Expenses & Petty Cash
-          </h1>
-          <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
-            {filtered.length} record{filtered.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/expenses/new")}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 18px", backgroundColor: "#10b981",
-            color: "white", border: "none", borderRadius: 10,
-            fontSize: 14, fontWeight: 600, cursor: "pointer"
-          }}
-        >
-          <Plus size={16} />
-          New Submission
-        </button>
-      </div>
+      {/* Back button */}
+      <button
+        onClick={() => router.push("/expenses")}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: "none", border: "none", cursor: "pointer",
+          color: "#64748b", fontSize: 13, marginBottom: 20, padding: 0
+        }}
+      >
+        <ArrowLeft size={15} /> Back to Expenses
+      </button>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid #e2e8f0", paddingBottom: 0 }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              padding: "10px 16px", border: "none", cursor: "pointer",
-              backgroundColor: "transparent", fontSize: 13, fontWeight: 500,
-              color: activeTab === tab.key ? "#10b981" : "#64748b",
-              borderBottom: activeTab === tab.key ? "2px solid #10b981" : "2px solid transparent",
-              marginBottom: -1, transition: "all 0.15s"
-            }}
-          >
-            {tab.label}
-            <span style={{
-              marginLeft: 6, padding: "1px 7px",
-              backgroundColor: activeTab === tab.key ? "#d1fae5" : "#f1f5f9",
-              color: activeTab === tab.key ? "#065f46" : "#94a3b8",
-              borderRadius: 9999, fontSize: 11, fontWeight: 600
-            }}>
-              {expenses.filter(e => {
-                if (tab.key === "all") return true;
-                if (tab.key === "mine") return e.submittedBy === user?.uid;
-                if (tab.key === "pending") return ["pending_manager", "pending_finance"].includes(e.status);
-                if (tab.key === "approved") return e.status === "approved";
-                if (tab.key === "rejected") return e.status === "rejected";
-                return true;
-              }).length}
-            </span>
-          </button>
-        ))}
-      </div>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: "0 0 4px 0" }}>
+        New Submission
+      </h1>
+      <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 24px 0" }}>
+        Submit an expense reimbursement or petty cash advance request
+      </p>
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
-          <Search size={15} style={{ position: "absolute", left: 12, top: 11, color: "#94a3b8" }} />
-          <input
-            type="text"
-            placeholder="Search by title or person..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: "100%", padding: "10px 12px 10px 36px",
-              border: "1px solid #e2e8f0", borderRadius: 8,
-              fontSize: 13, outline: "none", boxSizing: "border-box"
-            }}
-            onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
-            onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
-          />
-        </div>
-        <select
-          value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-          style={{
-            padding: "10px 12px", border: "1px solid #e2e8f0",
-            borderRadius: 8, fontSize: 13, backgroundColor: "white",
-            outline: "none", cursor: "pointer"
-          }}
-        >
-          <option value="all">All Types</option>
-          <option value="reimbursement">Expense Reimbursement</option>
-          <option value="petty_cash_advance">Petty Cash Advance</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      {filtered.length === 0 ? (
+      {/* No approver warning */}
+      {!hasApprover && (
         <div style={{
-          textAlign: "center", padding: 60,
-          backgroundColor: "#fff", border: "1px solid #e2e8f0",
-          borderRadius: 16
+          backgroundColor: "#fef2f2", border: "1px solid #fecaca",
+          borderRadius: 10, padding: "12px 16px", marginBottom: 20,
+          display: "flex", alignItems: "center", gap: 10
         }}>
-          <Receipt size={48} color="#cbd5e1" style={{ marginBottom: 16 }} />
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", margin: "0 0 8px 0" }}>
-            No expenses found
-          </h3>
-          <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px 0" }}>
-            {role === "employee"
-              ? "Submit your first expense to get started."
-              : "No expenses match your current filters."}
+          <AlertCircle size={18} color="#dc2626" />
+          <p style={{ fontSize: 13, color: "#991b1b", margin: 0 }}>
+            You don&apos;t have an approver assigned. Please contact your Admin before submitting.
           </p>
-          {role !== "finance" && (
-            <button
-              onClick={() => router.push("/expenses/new")}
-              style={{
-                padding: "10px 20px", backgroundColor: "#10b981",
-                color: "white", border: "none", borderRadius: 8,
-                fontSize: 14, fontWeight: 600, cursor: "pointer"
-              }}
-            >
-              New Submission
-            </button>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          backgroundColor: "#fff", border: "1px solid #e2e8f0",
-          borderRadius: 16, overflow: "hidden"
-        }}>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f8fafc" }}>
-                  {["Title", "Type", "Category", "Amount", "Project", "Submitted By", "Date", "Status", "Actions"].map(h => (
-                    <th key={h} style={{
-                      padding: "10px 16px", textAlign: "left",
-                      fontSize: 11, fontWeight: 600, color: "#64748b",
-                      textTransform: "uppercase", letterSpacing: "0.05em",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((expense, i) => (
-                  <tr
-                    key={expense.id}
-                    style={{
-                      borderTop: "1px solid #f1f5f9",
-                      backgroundColor: i % 2 === 0 ? "#fff" : "#fafafa",
-                      transition: "background 0.1s"
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f0fdf4")}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fff" : "#fafafa")}
-                  >
-                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 500, color: "#0f172a", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {expense.title ?? "—"}
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#64748b" }}>
-                        {expense.type === "petty_cash_advance"
-                          ? <><Wallet size={12} /> Petty Cash</>
-                          : <><Receipt size={12} /> Expense</>
-                        }
-                      </span>
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#374151" }}>
-                      {expense.category ?? "—"}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap" }}>
-                      {formatINR(expense.amount)}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: "#64748b" }}>
-                      {expense.projectName ?? "General"}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#374151" }}>
-                      {expense.submittedByName ?? "—"}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: "#64748b", whiteSpace: "nowrap" }}>
-                      {safeDate(expense.date)}
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <StatusBadge status={expense.status} />
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        {/* View */}
-                        <button
-                          onClick={() => router.push(`/expenses/${expense.id}`)}
-                          style={{ padding: 6, backgroundColor: "#f1f5f9", border: "none", borderRadius: 6, cursor: "pointer" }}
-                          title="View"
-                        >
-                          <Eye size={14} color="#64748b" />
-                        </button>
-
-                        {/* Approve */}
-                        {canApprove(expense) && (
-                          <button
-                            onClick={() => handleApprove(expense)}
-                            disabled={actionLoading === expense.id}
-                            style={{ padding: 6, backgroundColor: "#dcfce7", border: "none", borderRadius: 6, cursor: "pointer" }}
-                            title="Approve"
-                          >
-                            <CheckCircle size={14} color="#16a34a" />
-                          </button>
-                        )}
-
-                        {/* Reject */}
-                        {canApprove(expense) && (
-                          <button
-                            onClick={() => setRejectModal({ id: expense.id, name: expense.title })}
-                            style={{ padding: 6, backgroundColor: "#fee2e2", border: "none", borderRadius: 6, cursor: "pointer" }}
-                            title="Reject"
-                          >
-                            <XCircle size={14} color="#dc2626" />
-                          </button>
-                        )}
-
-                        {/* Mark Paid */}
-                        {canMarkPaid(expense) && (
-                          <button
-                            onClick={() => handleMarkPaid(expense)}
-                            disabled={actionLoading === expense.id}
-                            style={{ padding: "6px 10px", backgroundColor: "#ede9fe", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#5b21b6" }}
-                            title="Mark as Paid"
-                          >
-                            Mark Paid
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 
-      {/* Reject Modal */}
-      {rejectModal && (
+      {/* Temporary approver notice */}
+      {tempValid && user?.tempApproverName && (
         <div style={{
-          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+          backgroundColor: "#fffbeb", border: "1px solid #fde68a",
+          borderRadius: 10, padding: "12px 16px", marginBottom: 20,
+          display: "flex", alignItems: "center", gap: 10
         }}>
-          <div style={{ backgroundColor: "#fff", borderRadius: 14, padding: 24, width: 420, maxWidth: "90%" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", margin: "0 0 8px 0" }}>
-              Reject Expense
-            </h3>
-            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 16px 0" }}>
-              &ldquo;{rejectModal.name}&rdquo;
-            </p>
-            <textarea
-              placeholder="Reason for rejection (required)"
-              value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              rows={3}
-              style={{
-                width: "100%", padding: 10, border: "1px solid #e2e8f0",
-                borderRadius: 8, fontSize: 13, resize: "vertical",
-                outline: "none", boxSizing: "border-box", marginBottom: 16
-              }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <AlertCircle size={18} color="#d97706" />
+          <p style={{ fontSize: 13, color: "#92400e", margin: 0 }}>
+            Your temporary approver <strong>{user.tempApproverName}</strong> will review this
+            submission (valid until {user.tempApproverUntil}).
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+
+        {/* Type Selector */}
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 10px 0" }}>
+            Submission Type <span style={{ color: "#ef4444" }}>*</span>
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              {
+                value: "reimbursement" as const,
+                icon: <Receipt size={22} />,
+                label: "Expense Reimbursement",
+                desc: "I paid from my own pocket"
+              },
+              {
+                value: "petty_cash_advance" as const,
+                icon: <Wallet size={22} />,
+                label: "Petty Cash Advance",
+                desc: "I need cash upfront before spending"
+              }
+            ].map(opt => (
               <button
-                onClick={() => { setRejectModal(null); setRejectReason(""); }}
-                style={{ padding: "8px 16px", backgroundColor: "#f1f5f9", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer" }}
+                key={opt.value}
+                type="button"
+                onClick={() => setType(opt.value)}
+                style={{
+                  padding: 16, borderRadius: 12, cursor: "pointer", textAlign: "left",
+                  border: type === opt.value ? "2px solid #10b981" : "2px solid #e2e8f0",
+                  backgroundColor: type === opt.value ? "#f0fdf4" : "#fff",
+                  transition: "all 0.15s"
+                }}
               >
-                Cancel
+                <div style={{ color: type === opt.value ? "#10b981" : "#94a3b8", marginBottom: 8 }}>
+                  {opt.icon}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 2 }}>
+                  {opt.label}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>{opt.desc}</div>
               </button>
-              <button
-                onClick={handleReject}
-                disabled={!rejectReason.trim() || actionLoading === rejectModal.id}
-                style={{ padding: "8px 16px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            ))}
+          </div>
+        </div>
+
+        {/* Expense Details */}
+        <div style={{
+          backgroundColor: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: 14, padding: 20, marginBottom: 16
+        }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: "0 0 16px 0" }}>
+            Expense Details
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Field label="Title / Purpose" required>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. Client meeting lunch"
+                  required
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                />
+              </Field>
+            </div>
+
+            <Field label="Category" required>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                required
+                style={{ ...inputStyle, cursor: "pointer" }}
               >
-                Reject
-              </button>
+                <option value="">Select category</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Amount (₹)" required>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="0"
+                min="1"
+                required
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+              />
+            </Field>
+
+            <Field label="Date" required>
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                max={type === "reimbursement" ? new Date().toISOString().split("T")[0] : undefined}
+                min={type === "petty_cash_advance" ? new Date().toISOString().split("T")[0] : undefined}
+                required
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+              />
+            </Field>
+
+            <Field label="Project (Optional)">
+              <select
+                value={projectId}
+                onChange={e => {
+                  setProjectId(e.target.value);
+                  const p = projects.find(p => p.id === e.target.value);
+                  setProjectName(p ? `${p.name} (${p.code})` : "");
+                }}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                <option value="">No Project (General)</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Department">
+              <input
+                type="text"
+                value={department}
+                onChange={e => setDepartment(e.target.value)}
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+              />
+            </Field>
+
+            {type === "reimbursement" && (
+              <Field label="Paid To / Merchant (Optional)">
+                <input
+                  type="text"
+                  value={paidTo}
+                  onChange={e => setPaidTo(e.target.value)}
+                  placeholder="e.g. Swiggy, Uber"
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                />
+              </Field>
+            )}
+
+            {type === "petty_cash_advance" && (
+              <>
+                <Field label="Expected Use Date (Optional)">
+                  <input
+                    type="date"
+                    value={expectedUseDate}
+                    onChange={e => setExpectedUseDate(e.target.value)}
+                    style={inputStyle}
+                  />
+                </Field>
+                <Field label="Expected Return Date (Optional)">
+                  <input
+                    type="date"
+                    value={expectedReturnDate}
+                    onChange={e => setExpectedReturnDate(e.target.value)}
+                    style={inputStyle}
+                  />
+                </Field>
+              </>
+            )}
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Field label="Notes / Remarks (Optional)">
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Any additional details..."
+                  style={{ ...inputStyle, resize: "vertical" }}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#10b981")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                />
+              </Field>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Team Distribution (Petty Cash only) */}
+        {type === "petty_cash_advance" && (
+          <div style={{
+            backgroundColor: "#fff", border: "1px solid #e2e8f0",
+            borderRadius: 14, padding: 20, marginBottom: 16
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: 0 }}>
+                Team Distribution (Optional)
+              </h3>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <span style={{ fontSize: 13, color: "#64748b" }}>Distribute to team?</span>
+                <input
+                  type="checkbox"
+                  checked={isForTeam}
+                  onChange={e => setIsForTeam(e.target.checked)}
+                />
+              </label>
+            </div>
+
+            {isForTeam && (
+              <>
+                {teamDistribution.map((member, index) => (
+                  <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 140px 40px", gap: 8, marginBottom: 8 }}>
+                    <input
+                      type="text"
+                      value={member.name}
+                      onChange={e => updateTeamMember(index, "name", e.target.value)}
+                      placeholder="Team member name"
+                      style={inputStyle}
+                    />
+                    <input
+                      type="number"
+                      value={member.amount}
+                      onChange={e => updateTeamMember(index, "amount", e.target.value)}
+                      placeholder="Amount ₹"
+                      min="0"
+                      style={inputStyle}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTeamMember(index)}
+                      style={{ padding: 8, backgroundColor: "#fee2e2", border: "none", borderRadius: 8, cursor: "pointer" }}
+                    >
+                      <Trash2 size={14} color="#dc2626" />
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addTeamMember}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 14px", backgroundColor: "#f0fdf4",
+                    border: "1px solid #bbf7d0", borderRadius: 8,
+                    color: "#16a34a", fontSize: 13, cursor: "pointer", marginTop: 8
+                  }}
+                >
+                  <Plus size={14} /> Add Member
+                </button>
+
+                {teamDistribution.length > 0 && (
+                  <div style={{
+                    marginTop: 12, padding: "8px 12px",
+                    backgroundColor: teamMismatch ? "#fef2f2" : "#f0fdf4",
+                    borderRadius: 8, fontSize: 13,
+                    color: teamMismatch ? "#991b1b" : "#166534"
+                  }}>
+                    Team total: ₹{teamTotal.toLocaleString("en-IN")} / ₹{amountNum.toLocaleString("en-IN")} requested
+                    {teamMismatch && " — totals must match"}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Receipt Upload */}
+        <div style={{
+          backgroundColor: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: 14, padding: 20, marginBottom: 24
+        }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: "0 0 16px 0" }}>
+            Receipt / Document {type === "reimbursement" ? "(Recommended)" : "(Optional)"}
+          </h3>
+
+          {!file ? (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: "2px dashed #cbd5e1", borderRadius: 10,
+                padding: 32, textAlign: "center", cursor: "pointer",
+                transition: "all 0.15s"
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.borderColor = "#10b981";
+                (e.currentTarget as HTMLDivElement).style.backgroundColor = "#f0fdf4";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.borderColor = "#cbd5e1";
+                (e.currentTarget as HTMLDivElement).style.backgroundColor = "transparent";
+              }}
+            >
+              <Upload size={28} color="#94a3b8" style={{ marginBottom: 8 }} />
+              <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 4px 0" }}>
+                Click to upload receipt
+              </p>
+              <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+                PNG, JPG, PDF up to 10MB
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              border: "1px solid #e2e8f0", borderRadius: 10,
+              padding: 16, display: "flex", alignItems: "center", gap: 12
+            }}>
+              {filePreview ? (
+                <img src={filePreview} alt="Receipt" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }} />
+              ) : (
+                <div style={{ width: 60, height: 60, backgroundColor: "#f1f5f9", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Receipt size={24} color="#64748b" />
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "#0f172a", margin: "0 0 2px 0" }}>
+                  {file.name}
+                </p>
+                <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>
+                  {(file.size / 1024).toFixed(1)} KB
+                </p>
+                {uploading && (
+                  <div style={{ marginTop: 6, height: 4, backgroundColor: "#e2e8f0", borderRadius: 2 }}>
+                    <div style={{ height: 4, backgroundColor: "#10b981", borderRadius: 2, width: `${uploadProgress}%`, transition: "width 0.3s" }} />
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                style={{ padding: 6, backgroundColor: "#fee2e2", border: "none", borderRadius: 6, cursor: "pointer" }}
+              >
+                <X size={14} color="#dc2626" />
+              </button>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={() => router.push("/expenses")}
+            style={{
+              padding: "12px 24px", backgroundColor: "#f1f5f9",
+              color: "#374151", border: "1px solid #e2e8f0",
+              borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer"
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || !hasApprover || teamMismatch}
+            style={{
+              padding: "12px 28px",
+              backgroundColor: (submitting || !hasApprover || teamMismatch) ? "#d1fae5" : "#10b981",
+              color: "white", border: "none", borderRadius: 10,
+              fontSize: 14, fontWeight: 600,
+              cursor: (submitting || !hasApprover || teamMismatch) ? "not-allowed" : "pointer"
+            }}
+          >
+            {submitting ? "Submitting..." : "Submit Expense"}
+          </button>
+        </div>
+
+      </form>
 
       {/* Toast */}
       {toast && (
