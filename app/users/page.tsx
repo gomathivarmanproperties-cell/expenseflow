@@ -80,7 +80,11 @@ export default function UsersPage() {
     bankName: "",
     accountNumber: "",
     ifscCode: "",
-    accountHolderName: ""
+    accountHolderName: "",
+    tempApproverId: "",
+    tempApproverName: "",
+    tempApproverFrom: "",
+    tempApproverUntil: ""
   });
 
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -153,18 +157,22 @@ export default function UsersPage() {
       if (editingUser) {
         // Update existing user
         await updateDoc(doc(db, "users", editingUser.id), {
-          fullName: formData.fullName,
-          role: formData.role,
-          department: formData.department,
-          designation: formData.designation,
-          phone: formData.phone,
+          fullName: formData.fullName || "",
+          role: formData.role || "employee",
+          department: formData.department || "",
+          designation: formData.designation || "",
+          phone: formData.phone || "",
           assignedApproverId: formData.assignedApproverId || null,
           assignedApproverName: approvers.find(a => a.id === formData.assignedApproverId)?.fullName || null,
-          status: formData.status,
-          bankName: formData.bankName,
-          accountNumber: formData.accountNumber,
-          ifscCode: formData.ifscCode,
-          accountHolderName: formData.accountHolderName
+          status: formData.status ?? "active",
+          bankName: formData.bankName || "",
+          accountNumber: formData.accountNumber || "",
+          ifscCode: formData.ifscCode || "",
+          accountHolderName: formData.accountHolderName || "",
+          tempApproverId: formData.tempApproverId || null,
+          tempApproverName: formData.tempApproverName || null,
+          tempApproverFrom: formData.tempApproverFrom || null,
+          tempApproverUntil: formData.tempApproverUntil || null
         });
         showToast("User updated successfully!", "success");
       } else {
@@ -252,11 +260,15 @@ export default function UsersPage() {
       designation: user.designation || "",
       phone: user.phone || "",
       assignedApproverId: user.assignedApproverId || "",
-      status: user.status,
+      status: user.status ?? "active",
       bankName: user.bankName || "",
       accountNumber: user.accountNumber || "",
       ifscCode: user.ifscCode || "",
-      accountHolderName: user.accountHolderName || ""
+      accountHolderName: user.accountHolderName || "",
+      tempApproverId: user.tempApproverId || "",
+      tempApproverName: user.tempApproverName || "",
+      tempApproverFrom: user.tempApproverFrom || "",
+      tempApproverUntil: user.tempApproverUntil || ""
     });
     setShowModal(true);
   };
