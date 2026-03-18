@@ -177,11 +177,6 @@ export default function NewExpensePage() {
     e.preventDefault();
     if (!user) return;
 
-    if (!hasApprover) {
-      showToast("No approver assigned. Contact Admin.", "error");
-      return;
-    }
-
     if (!title || !category || !amount || !date) {
       showToast("Please fill in all required fields.", "error");
       return;
@@ -299,13 +294,17 @@ export default function NewExpensePage() {
       {/* No approver warning */}
       {!hasApprover && (
         <div style={{
-          backgroundColor: "#fef2f2", border: "1px solid #fecaca",
-          borderRadius: 10, padding: "12px 16px", marginBottom: 20,
-          display: "flex", alignItems: "center", gap: 10
+          backgroundColor: "#fffbeb", 
+          border: "1px solid #fde68a",
+          borderRadius: 10, padding: "10px 14px", 
+          marginBottom: 16,
+          display: "flex", alignItems: "center", gap: 8
         }}>
-          <AlertCircle size={18} color="#dc2626" />
-          <p style={{ fontSize: 13, color: "#991b1b", margin: 0 }}>
-            You don&apos;t have an approver assigned. Please contact your Admin before submitting.
+          <AlertCircle size={16} color="#d97706" />
+          <p style={{ fontSize: 13, color: "#92400e", margin: 0 }}>
+            No approver assigned yet. You can still save drafts, 
+            but ask your Admin to assign an approver before 
+            submitting a report.
           </p>
         </div>
       )}
@@ -313,9 +312,11 @@ export default function NewExpensePage() {
       {/* Temporary approver notice */}
       {tempValid && user?.tempApproverName && (
         <div style={{
-          backgroundColor: "#fffbeb", border: "1px solid #fde68a",
-          borderRadius: 10, padding: "12px 16px", marginBottom: 20,
-          display: "flex", alignItems: "center", gap: 10
+          backgroundColor: "#fffbeb", 
+          border: "1px solid #fde68a",
+          borderRadius: 10, padding: "10px 14px", 
+          marginBottom: 16,
+          display: "flex", alignItems: "center", gap: 8
         }}>
           <AlertCircle size={18} color="#d97706" />
           <p style={{ fontSize: 13, color: "#92400e", margin: 0 }}>
@@ -701,13 +702,13 @@ export default function NewExpensePage() {
           </button>
           <button
             type="submit"
-            disabled={submitting || !hasApprover || teamMismatch}
+            disabled={submitting || teamMismatch}
             style={{
               padding: "12px 28px",
-              backgroundColor: (submitting || !hasApprover || teamMismatch) ? "#d1fae5" : "#10b981",
+              backgroundColor: (submitting || teamMismatch) ? "#d1fae5" : "#10b981",
               color: "white", border: "none", borderRadius: 10,
               fontSize: 14, fontWeight: 600,
-              cursor: (submitting || !hasApprover || teamMismatch) ? "not-allowed" : "pointer"
+              cursor: (submitting || teamMismatch) ? "not-allowed" : "pointer"
             }}
           >
             {submitting ? "Submitting..." : "Submit for Approval"}
