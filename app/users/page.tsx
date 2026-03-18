@@ -289,26 +289,35 @@ export default function UsersPage() {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "?";
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined) => {
+    const safeStatus = status ?? "active";
     const styles = {
       active: { backgroundColor: "#dcfce7", color: "#166534", border: "1px solid #bbf7d0" },
       inactive: { backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }
     };
-    return { ...styles[status as keyof typeof styles], padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 600 };
+    return { 
+      ...(styles[safeStatus as keyof typeof styles] ?? styles.active), 
+      padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 600 
+    };
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: string | undefined) => {
+    const safeRole = role ?? "employee";
     const styles = {
       admin: { backgroundColor: "#f3e8ff", color: "#7c3aed", border: "1px solid #e9d5ff" },
       finance: { backgroundColor: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe" },
       manager: { backgroundColor: "#fed7aa", color: "#ea580c", border: "1px solid #fed7aa" },
       employee: { backgroundColor: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }
     };
-    return { ...styles[role as keyof typeof styles], padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 600 };
+    return { 
+      ...(styles[safeRole as keyof typeof styles] ?? styles.employee), 
+      padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 600 
+    };
   };
 
   if (!user || user.role !== "admin") {
@@ -423,7 +432,7 @@ export default function UsersPage() {
                         fontWeight: 600,
                         fontSize: 14
                       }}>
-                        {getInitials(user.fullName)}
+                        {getInitials(user.fullName ?? "Unknown")}
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 500, color: "#111827" }}>{user.fullName}</div>
@@ -439,12 +448,12 @@ export default function UsersPage() {
                   <td style={{ padding: "16px" }}>
                     <div style={{ fontSize: 14, color: "#374151", display: "flex", alignItems: "center", gap: 4 }}>
                       <Mail size={14} />
-                      {user.email}
+                      {user.email ?? "—"}
                     </div>
                   </td>
                   <td style={{ padding: "16px" }}>
                     <span style={getRoleBadge(user.role)}>
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      {(user.role ?? "employee").charAt(0).toUpperCase() + (user.role ?? "employee").slice(1)}
                     </span>
                   </td>
                   <td style={{ padding: "16px", fontSize: 14, color: "#374151" }}>
@@ -458,7 +467,7 @@ export default function UsersPage() {
                   </td>
                   <td style={{ padding: "16px" }}>
                     <span style={getStatusBadge(user.status)}>
-                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                      {(user.status ?? "active").charAt(0).toUpperCase() + (user.status ?? "active").slice(1)}
                     </span>
                   </td>
                   <td style={{ padding: "16px" }}>
