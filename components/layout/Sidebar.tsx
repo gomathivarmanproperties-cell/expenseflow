@@ -12,6 +12,7 @@ import {
   Users, 
   IndianRupee, 
   FileText,
+  FileBarChart,
   User,
   Settings,
   FolderOpen,
@@ -21,6 +22,7 @@ import {
 const navigationItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Expenses", href: "/expenses", icon: Receipt },
+  { name: "Expense Reports", href: "/expense-reports", icon: FileBarChart },
   { name: "Vendors", href: "/vendors", icon: Users },
   { name: "Budgets", href: "/budgets", icon: IndianRupee },
   { name: "Projects", href: "/projects", icon: FolderOpen, roles: ["admin", "manager", "finance"] },
@@ -34,10 +36,10 @@ const bottomNavItems = [
 ];
 
 const roleAccess = {
-  employee: ["dashboard", "expenses"],
-  manager: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
-  finance: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
-  admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
+  employee: ["dashboard", "expenses", "expense-reports"],
+  manager: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "audit-trail"],
+  finance: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "audit-trail"],
+  admin: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "audit-trail"],
 };
 
 const roleBadgeColors = {
@@ -67,15 +69,16 @@ export function Sidebar() {
 
   // Default role access as fallback
   const defaultRoleAccess = {
-    employee: ["dashboard", "expenses"],
-    manager: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail"],
-    finance: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail"],
-    admin: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail", "users", "settings"],
+    employee: ["dashboard", "expenses", "expense-reports"],
+    manager: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "projects", "audit-trail"],
+    finance: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "projects", "audit-trail"],
+    admin: ["dashboard", "expenses", "expense-reports", "vendors", "budgets", "projects", "audit-trail", "users", "settings"],
   };
 
   // Default module access structure (same as settings page)
   const defaultModuleAccess = {
     expenses: { employee: true, manager: true, finance: true },
+    "expense-reports": { employee: true, manager: true, finance: true },
     vendors: { employee: false, manager: true, finance: true },
     budgets: { employee: false, manager: true, finance: true },
     projects: { employee: false, manager: true, finance: true },
