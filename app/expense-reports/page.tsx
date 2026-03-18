@@ -131,32 +131,40 @@ export default function ExpenseReportsPage() {
   useEffect(() => {
     if (!user) return;
 
-    // Load expense reports
+    // Use simple query without orderBy to avoid needing composite indexes
     let reportsQuery;
+  
     if (role === "employee") {
       reportsQuery = query(
         collection(db, "expenseReports"),
-        where("submittedBy", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("submittedBy", "==", user.uid)
       );
     } else if (role === "manager") {
       reportsQuery = query(
         collection(db, "expenseReports"),
-        where("assignedApproverId", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("assignedApproverId", "==", user.uid)
       );
     } else {
       // Finance and Admin see all
-      reportsQuery = query(
-        collection(db, "expenseReports"),
-        orderBy("createdAt", "desc")
-      );
+      reportsQuery = query(collection(db, "expenseReports"));
     }
 
     const unsubscribeReports = onSnapshot(reportsQuery, (snap) => {
       const data = snap.docs.map(d => ({ 
         id: d.id, ...d.data() 
       } as ExpenseReport));
+      
+      // Sort client-side by createdAt descending
+      data.sort((a, b) => {
+        const getTime = (val: unknown): number => {
+          if (!val) return 0;
+          const v = val as { toDate?: () => Date };
+          if (v.toDate) return v.toDate().getTime();
+          return new Date(val as string).getTime();
+        };
+        return getTime(b.createdAt) - getTime(a.createdAt);
+      });
+      
       setReports(data);
     });
 
@@ -165,14 +173,25 @@ export default function ExpenseReportsPage() {
       const draftsQuery = query(
         collection(db, "expenses"),
         where("submittedBy", "==", user.uid),
-        where("status", "==", "draft"),
-        orderBy("createdAt", "desc")
+        where("status", "==", "draft")
       );
 
       const unsubscribeDrafts = onSnapshot(draftsQuery, (snap) => {
         const data = snap.docs.map(d => ({ 
           id: d.id, ...d.data() 
         } as Expense));
+        
+        // Sort client-side by createdAt descending
+        data.sort((a, b) => {
+          const getTime = (val: unknown): number => {
+            if (!val) return 0;
+            const v = val as { toDate?: () => Date };
+            if (v.toDate) return v.toDate().getTime();
+            return new Date(val as string).getTime();
+          };
+          return getTime(b.createdAt) - getTime(a.createdAt);
+        });
+        
         setDraftExpenses(data);
         setLoading(false);
       });

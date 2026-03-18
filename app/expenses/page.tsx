@@ -30,7 +30,7 @@ interface Expense {
   submittedByName: string;
   assignedApproverId?: string;
   assignedApproverName?: string;
-  status: "pending_manager" | "pending_finance" | "approved" | "rejected" | "paid";
+  status: "draft" | "pending_manager" | "pending_finance" | "approved" | "rejected" | "paid";
   notes?: string;
   receiptURL?: string;
   createdAt?: string;
@@ -65,6 +65,7 @@ const safeDate = (val: unknown) => {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  draft:           { label: "Draft",           bg: "#f3f4f6", color: "#374151", border: "#d1d5db" },
   pending_manager: { label: "Pending Manager", bg: "#fef9c3", color: "#854d0e", border: "#fde68a" },
   pending_finance: { label: "Pending Finance", bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe" },
   approved:        { label: "Approved",         bg: "#dcfce7", color: "#166534", border: "#bbf7d0" },
@@ -160,6 +161,7 @@ export default function ExpensesPage() {
   const tabs = [
     { key: "all", label: "All" },
     { key: "mine", label: "My Submissions" },
+    { key: "drafts", label: "Drafts" },
     ...(isManagerOrAbove ? [{ key: "pending", label: "Pending Approval" }] : []),
     { key: "approved", label: "Approved" },
     { key: "rejected", label: "Rejected" },
@@ -167,6 +169,7 @@ export default function ExpensesPage() {
 
   const filtered = expenses.filter(e => {
     if (activeTab === "mine" && e.submittedBy !== user?.uid) return false;
+    if (activeTab === "drafts" && e.status !== "draft") return false;
     if (activeTab === "pending" && !["pending_manager", "pending_finance"].includes(e.status)) return false;
     if (activeTab === "approved" && e.status !== "approved") return false;
     if (activeTab === "rejected" && e.status !== "rejected") return false;
