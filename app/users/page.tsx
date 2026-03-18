@@ -41,6 +41,10 @@ interface User {
   accountNumber?: string;
   ifscCode?: string;
   accountHolderName?: string;
+  tempApproverId?: string;
+  tempApproverName?: string;
+  tempApproverFrom?: string;
+  tempApproverUntil?: string;
   createdAt?: string;
 }
 
