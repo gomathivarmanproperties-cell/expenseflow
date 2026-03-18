@@ -169,6 +169,8 @@ export default function NewExpensePage() {
   const amountNum = parseFloat(amount) || 0;
   const teamMismatch = isForTeam && teamDistribution.length > 0 && Math.abs(teamTotal - amountNum) > 0.01;
 
+  const userName = user.fullName || user.email?.split("@")[0] || "User";
+
   // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +230,7 @@ export default function NewExpensePage() {
         receiptURL,
         receiptName,
         submittedBy: user.uid,
-        submittedByName: user.fullName ?? user.email ?? "Unknown",
+        submittedByName: userName,
         submittedByEmail: user.email,
         assignedApproverId: effectiveApproverId ?? null,
         assignedApproverName: effectiveApproverName ?? null,
@@ -256,7 +258,7 @@ export default function NewExpensePage() {
         });
       }
 
-      showToast("Submitted successfully!", "success");
+      showToast("Expense submitted successfully!", "success");
       setSubmitting(false);
       setUploading(false);
       router.push("/expenses");
@@ -273,7 +275,7 @@ export default function NewExpensePage() {
 
       {/* Back button */}
       <button
-        onClick={() => router.push("/expenses")}
+        onClick={() => router.back()}
         style={{
           display: "flex", alignItems: "center", gap: 6,
           background: "none", border: "none", cursor: "pointer",

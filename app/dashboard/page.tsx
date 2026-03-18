@@ -261,7 +261,7 @@ export default function DashboardPage() {
           
           const expense: Expense = {
             id: doc.id,
-            employeeName: d.employeeName ?? d.fullName ?? "Unknown",
+            employeeName: d.submittedByName || d.employeeName || d.fullName || "Unknown",
             submittedBy: d.submittedBy,
             category: d.category ?? "Other",
             amount: d.amount ?? 0,

@@ -379,14 +379,16 @@ export default function SettingsPage() {
 
     setUploadingCompanyLogo(true);
     try {
-      const storageRef = ref(storage, `company/logo`);
-      await uploadBytes(storageRef, file);
-      const logoURL = await getDownloadURL(storageRef);
+      const storageRef = ref(storage, `company/logo_${Date.now()}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const logoURL = await getDownloadURL(snapshot.ref);
       
       setCompanySettings(prev => ({ ...prev, logoURL }));
+      await setDoc(doc(db, "appConfig", "company"), { logoURL }, { merge: true });
       showToast("Company logo uploaded successfully!", "success");
-    } catch {
-      showToast("Failed to upload company logo.", "error");
+    } catch (error) {
+      console.error("Upload error:", error);
+      showToast("Upload failed. Check storage permissions.", "error");
     } finally {
       setUploadingCompanyLogo(false);
     }
@@ -398,14 +400,16 @@ export default function SettingsPage() {
 
     setUploadingAppLogo(true);
     try {
-      const storageRef = ref(storage, `app/logo`);
-      await uploadBytes(storageRef, file);
-      const appLogoURL = await getDownloadURL(storageRef);
+      const storageRef = ref(storage, `app/logo_${Date.now()}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const appLogoURL = await getDownloadURL(snapshot.ref);
       
       setCompanySettings(prev => ({ ...prev, appLogoURL }));
+      await setDoc(doc(db, "appConfig", "company"), { appLogoURL }, { merge: true });
       showToast("App logo uploaded successfully!", "success");
-    } catch {
-      showToast("Failed to upload app logo.", "error");
+    } catch (error) {
+      console.error("Upload error:", error);
+      showToast("Upload failed. Check storage permissions.", "error");
     } finally {
       setUploadingAppLogo(false);
     }
