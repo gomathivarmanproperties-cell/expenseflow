@@ -14,7 +14,8 @@ import {
   FileText,
   User,
   Settings,
-  FolderOpen
+  FolderOpen,
+  Users as Users2
 } from "lucide-react";
 
 const navigationItems = [
@@ -67,9 +68,9 @@ export function Sidebar() {
   // Default role access as fallback
   const defaultRoleAccess = {
     employee: ["dashboard", "expenses"],
-    manager: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
-    finance: ["dashboard", "expenses", "vendors", "budgets", "audit-trail"],
-    admin: ["dashboard", "expenses", "vendors", "budgets", "audit-trail", "settings"],
+    manager: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail"],
+    finance: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail"],
+    admin: ["dashboard", "expenses", "vendors", "budgets", "projects", "audit-trail", "users", "settings"],
   };
 
   // Default module access structure (same as settings page)
@@ -77,6 +78,7 @@ export function Sidebar() {
     expenses: { employee: true, manager: true, finance: true },
     vendors: { employee: false, manager: true, finance: true },
     budgets: { employee: false, manager: true, finance: true },
+    projects: { employee: false, manager: true, finance: true },
     auditTrail: { employee: false, manager: true, finance: true }
   };
 
