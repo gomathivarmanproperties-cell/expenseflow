@@ -11,7 +11,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import {
   Receipt, Wallet, Upload, X, AlertCircle,
-  CheckCircle, ArrowLeft, Plus, Trash2
+  CheckCircle, ArrowLeft, Plus, Trash2, CheckSquare
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ export default function NewExpensePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
-  const [type, setType] = useState<"reimbursement" | "petty_cash_advance">("reimbursement");
+  const [type, setType] = useState<"reimbursement" | "petty_cash_advance" | "petty_cash_settlement">("reimbursement");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -76,6 +76,12 @@ export default function NewExpensePage() {
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
   const [isForTeam, setIsForTeam] = useState(false);
   const [teamDistribution, setTeamDistribution] = useState<TeamMember[]>([]);
+  
+  // Petty cash settlement state
+  const [selectedAdvanceId, setSelectedAdvanceId] = useState("");
+  const [amountSpent, setAmountSpent] = useState("");
+  const [amountReturned, setAmountReturned] = useState("");
+  const [advances, setAdvances] = useState<any[]>([]);
 
   // Data
   const [categories, setCategories] = useState<string[]>([
@@ -133,6 +139,30 @@ export default function NewExpensePage() {
     };
     loadProjects();
   }, []);
+
+  // Load advances for petty cash settlement
+  useEffect(() => {
+    const loadAdvances = async () => {
+      try {
+        const q = query(
+          collection(db, "expenses"), 
+          where("submittedBy", "==", user.uid),
+          where("type", "==", "petty_cash_advance"),
+          where("status", "!=", "settled")
+        );
+        const snap = await getDocs(q);
+        const advancesList = snap.docs.map(d => ({ 
+          id: d.id, 
+          title: d.data().title,
+          amount: d.data().amount,
+          amountSpent: d.data().amountSpent || 0,
+          ...d.data()
+        }));
+        setAdvances(advancesList);
+      } catch { /* ignore */ }
+    };
+    loadAdvances();
+  }, [user]);
 
   // File handling
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -673,22 +703,13 @@ export default function NewExpensePage() {
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button
             type="button"
-            onClick={() => router.push("/expense-reports")}
-            style={{
-              padding: "12px 24px", backgroundColor: "#f1f5f9",
-              color: "#374151", border: "1px solid #e2e8f0",
-              borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer"
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
             onClick={() => {
               setSaveAsDraft(true);
-              // Trigger form submission
-              const form = document.querySelector("form");
-              if (form) form.requestSubmit();
+              // Use setTimeout to ensure state is updated before submission
+              setTimeout(() => {
+                const form = document.querySelector("form");
+                if (form) form.requestSubmit();
+              }, 0);
             }}
             disabled={submitting}
             style={{

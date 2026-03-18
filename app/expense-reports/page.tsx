@@ -376,29 +376,26 @@ export default function ExpenseReportsPage() {
               Add Expense
             </button>
           )}
-          {draftExpenses.length > 0 && role === "employee" && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => handleCreateReport("15days")}
-                style={{
-                  padding: "10px 16px", backgroundColor: "#10b981",
-                  color: "white", border: "none", borderRadius: 10,
-                  fontSize: 14, fontWeight: 600, cursor: "pointer"
-                }}
-              >
-                Create 15 Days Report
-              </button>
-              <button
-                onClick={() => handleCreateReport("monthly")}
-                style={{
-                  padding: "10px 16px", backgroundColor: "#3b82f6",
-                  color: "white", border: "none", borderRadius: 10,
-                  fontSize: 14, fontWeight: 600, cursor: "pointer"
-                }}
-              >
-                Create Monthly Report
-              </button>
-            </div>
+          {role === "employee" && (
+            <button
+              onClick={() => {
+                if (draftExpenses.length === 0) {
+                  showToast(
+                    "No draft expenses found. Add expenses first.", 
+                    "error"
+                  );
+                  return;
+                }
+                handleCreateReport("15days");
+              }}
+              style={{
+                padding: "10px 16px", backgroundColor: "#10b981",
+                color: "white", border: "none", borderRadius: 10,
+                fontSize: 14, fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              Create 15 Days Report
+            </button>
           )}
         </div>
       </div>
@@ -425,26 +422,26 @@ export default function ExpenseReportsPage() {
       {/* Draft Expenses Tab */}
       {activeTab === "drafts" && role === "employee" && (
         <div style={{ backgroundColor: "white", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
-          {draftExpenses.length === 0 ? (
-            <div style={{ padding: "48px 24px", textAlign: "center" }}>
-              <Receipt size={48} color="#94a3b8" style={{ marginBottom: 16 }} />
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: "#64748b", margin: "0 0 8px 0" }}>
-                No Draft Expenses
-              </h3>
-              <p style={{ fontSize: 13, color: "#94a3b8", margin: "0 0 16px 0" }}>
-                Submit expenses as drafts to include them in reports
-              </p>
-              <button
-                onClick={() => router.push("/expenses/new")}
-                style={{
-                  padding: "10px 18px", backgroundColor: "#10b981",
-                  color: "white", border: "none", borderRadius: 10,
-                  fontSize: 14, fontWeight: 600, cursor: "pointer"
-                }}
-              >
-                Add First Expense
-              </button>
-            </div>
+          {role === "employee" && (
+            <button
+              onClick={() => {
+                if (draftExpenses.length === 0) {
+                  showToast(
+                    "No draft expenses found. Add expenses first.", 
+                    "error"
+                  );
+                  return;
+                }
+                handleCreateReport("monthly");
+              }}
+              style={{
+                padding: "10px 16px", backgroundColor: "#3b82f6",
+                color: "white", border: "none", borderRadius: 10,
+                fontSize: 14, fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              Create Monthly Report
+            </button>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
