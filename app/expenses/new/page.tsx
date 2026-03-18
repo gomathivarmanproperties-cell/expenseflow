@@ -92,6 +92,7 @@ export default function NewExpensePage() {
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
+  const [saveAsDraft, setSaveAsDraft] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const showToast = (message: string, type: "success" | "error") => {
@@ -234,7 +235,7 @@ export default function NewExpensePage() {
         submittedByEmail: user.email,
         assignedApproverId: effectiveApproverId ?? null,
         assignedApproverName: effectiveApproverName ?? null,
-        status: "pending_manager",
+        status: saveAsDraft ? "draft" : "pending_manager",
         expectedUseDate: expectedUseDate || null,
         expectedReturnDate: expectedReturnDate || null,
         isForTeam,
@@ -246,21 +247,24 @@ export default function NewExpensePage() {
 
       await addDoc(collection(db, "expenses"), expenseData);
 
-      // Notify approver
-      if (effectiveApproverId) {
-        await addDoc(collection(db, "notifications"), {
-          userId: effectiveApproverId,
-          title: "New Expense Submitted",
-          message: `${user.fullName} submitted ₹${amount} for ${category}`,
-          type: "info",
-          read: false,
-          createdAt: serverTimestamp()
-        });
+      if (!saveAsDraft) {
+        // Notify approver only if not saving as draft
+        if (effectiveApproverId) {
+          await addDoc(collection(db, "notifications"), {
+            userId: effectiveApproverId,
+            title: "New Expense Submitted",
+            message: `${user.fullName} submitted ₹${amount} for ${category}`,
+            type: "info",
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
       }
 
-      showToast("Expense submitted successfully!", "success");
-      setSubmitting(false);
-      setUploading(false);
+      showToast(
+        saveAsDraft ? "Expense saved as draft!" : "Expense submitted successfully!", 
+        "success"
+      );
       router.push("/expenses");
     } catch (err) {
       console.error(err);
@@ -668,7 +672,7 @@ export default function NewExpensePage() {
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button
             type="button"
-            onClick={() => router.push("/expenses")}
+            onClick={() => router.push("/expense-reports")}
             style={{
               padding: "12px 24px", backgroundColor: "#f1f5f9",
               color: "#374151", border: "1px solid #e2e8f0",
@@ -676,6 +680,24 @@ export default function NewExpensePage() {
             }}
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSaveAsDraft(true);
+              // Trigger form submission
+              const form = document.querySelector("form");
+              if (form) form.requestSubmit();
+            }}
+            disabled={submitting}
+            style={{
+              padding: "12px 24px", backgroundColor: "#64748b",
+              color: "white", border: "none", borderRadius: 10,
+              fontSize: 14, fontWeight: 600,
+              cursor: submitting ? "not-allowed" : "pointer"
+            }}
+          >
+            {submitting ? "Saving..." : "Save as Draft"}
           </button>
           <button
             type="submit"
@@ -688,7 +710,7 @@ export default function NewExpensePage() {
               cursor: (submitting || !hasApprover || teamMismatch) ? "not-allowed" : "pointer"
             }}
           >
-            {submitting ? "Submitting..." : "Submit Expense"}
+            {submitting ? "Submitting..." : "Submit for Approval"}
           </button>
         </div>
 
