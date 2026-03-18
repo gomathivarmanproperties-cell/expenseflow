@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth, AppUserRole } from "@/components/auth/AuthProvider";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, setDoc, deleteDoc, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
@@ -71,7 +71,7 @@ export default function UsersPage() {
     fullName: "",
     email: "",
     password: "",
-    role: "employee" as const,
+    role: "employee" as AppUserRole,
     department: "",
     designation: "",
     phone: "",
@@ -651,7 +651,7 @@ export default function UsersPage() {
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as AppUserRole }))}
                     style={{
                       width: "100%",
                       padding: "8px 12px",
@@ -756,7 +756,7 @@ export default function UsersPage() {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as "active" | "inactive" }))}
                     style={{
                       width: "100%",
                       padding: "8px 12px",
