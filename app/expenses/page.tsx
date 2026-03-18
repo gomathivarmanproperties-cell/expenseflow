@@ -113,22 +113,13 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (!user) return;
 
-    let q;
-    if (role === "employee") {
-      q = query(
-        collection(db, "expenses"),
-        where("submittedBy", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-    } else if (role === "manager") {
-      q = query(
-        collection(db, "expenses"),
-        where("assignedApproverId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-    } else {
-      q = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
-    }
+    const constraints = role === "employee"
+      ? [where("submittedBy", "==", user.uid), orderBy("createdAt", "desc")]
+      : role === "manager"
+      ? [where("assignedApproverId", "==", user.uid), orderBy("createdAt", "desc")]
+      : [orderBy("createdAt", "desc")];
+
+    const q = query(collection(db, "expenses"), ...constraints);
 
     return onSnapshot(q, (snap) => {
       setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense)));
