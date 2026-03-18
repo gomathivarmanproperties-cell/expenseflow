@@ -26,7 +26,7 @@ interface ExpenseReport {
   submittedByName: string;
   assignedApproverId?: string;
   assignedApproverName?: string;
-  status: "draft" | "pending_manager" | "pending_finance" | "paid" | "rejected";
+  status: "draft" | "pending_manager" | "pending_finance" | "approved" | "paid" | "rejected";
   totalAmount: number;
   expenseIds: string[];
   approvalHistory: ApprovalStep[];
