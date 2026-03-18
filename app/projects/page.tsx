@@ -86,7 +86,7 @@ export default function ProjectsPage() {
     description: "",
     startDate: "",
     endDate: "",
-    status: "active" as const,
+    status: "active" as "active" | "on-hold" | "closed",
     totalBudget: 0,
     expensesBudget: 0,
     vendorsBudget: 0,
@@ -672,7 +672,7 @@ export default function ProjectsPage() {
                     </label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as "active" | "on-hold" | "closed" }))}
                       style={{
                         width: "100%",
                         padding: "8px 12px",
